@@ -1,6 +1,6 @@
 import unittest
 
-from csst.dfs.api.local.common.db import DBClient
+from csst_dfs_api_local.common.db import DBClient
 
 class DBClientTestCase(unittest.TestCase):
     def setUp(self):
