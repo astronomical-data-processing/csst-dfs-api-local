@@ -1,24 +1,24 @@
 import logging
 import unittest
 
-from csst_dfs_api_local.ifs import FitsApi
+from csst_dfs_api_local.ifs import RefFitsApi
 
 log = logging.getLogger('csst')
 class IFSFitsTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.api = FitsApi()
+        self.api = RefFitsApi()
         self.api.scan2db()
 
     def test_find(self):
-        path = self.api.find(obs_time=900, type='obs')
+        path = self.api.find(obs_time=300, type='Flat')
         log.info('find', path)
-        path = self.api.find(fits_id='CCD2_ObsTime_600_ObsNum_8')
+        path = self.api.find(fits_id='CCD1_Flat_img')
         log.info('find', path)
     
     def test_read(self):
-        file = self.api.read(fits_id='CCD2_ObsTime_600_ObsNum_8')
+        file = self.api.read(fits_id='CCD1_Flat_img')
         log.info('read', str(type(file)))
-        path = self.api.find(obs_time=900, type='obs')
+        path = self.api.find(obs_time=300, type='Flat')
         file = self.api.read(file_path=path)
         log.info('read', str(type(file)))

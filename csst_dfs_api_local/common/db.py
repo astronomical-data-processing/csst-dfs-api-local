@@ -1,7 +1,7 @@
 import os
 import datetime
 import sqlite3
-from DBUtils.PersistentDB import PersistentDB
+from dbutils.persistent_db import PersistentDB
 from .utils import singleton
 
 import logging

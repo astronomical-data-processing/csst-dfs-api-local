@@ -38,3 +38,6 @@ test_reports.xml
 **/*.rdb
 **/.eggs
 **/_version.py
+
+# tmp test
+.tmp/*
