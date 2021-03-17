@@ -43,7 +43,7 @@ class RefFitsApi(FitsApi):
 
         self.db.execute(
             'INSERT INTO t_rawfits VALUES(?,?,?,?,?)',
-            (name, obs_time, ccd_num, type, save_path)
+            (basename, obs_time, ccd_num, type, save_path)
         )
         self.db._conn.commit()
         if file_path != save_path:

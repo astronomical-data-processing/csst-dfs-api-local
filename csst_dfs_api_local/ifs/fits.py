@@ -22,12 +22,12 @@ class FitsApi(object):
         if not os.path.exists(self.root_dir):
             os.mkdir(self.root_dir)
             log.info("using [%s] as root directory", self.root_dir)
-        if not os.path.exists(os.path.join(self.root_dir, "fits")):
-            os.mkdir(os.path.join(self.root_dir, "fits"))
-        if not os.path.exists(os.path.join(self.root_dir, "refs")):
-            os.mkdir(os.path.join(self.root_dir, "refs"))
-        if not os.path.exists(os.path.join(self.root_dir, "results")):
-            os.mkdir(os.path.join(self.root_dir, "results"))
+        # if not os.path.exists(os.path.join(self.root_dir, "fits")):
+        #     os.mkdir(os.path.join(self.root_dir, "fits"))
+        # if not os.path.exists(os.path.join(self.root_dir, "refs")):
+        #     os.mkdir(os.path.join(self.root_dir, "refs"))
+        # if not os.path.exists(os.path.join(self.root_dir, "results")):
+        #     os.mkdir(os.path.join(self.root_dir, "results"))
 
     def find(self, **kwargs):
         '''
@@ -39,6 +39,7 @@ class FitsApi(object):
         return list of paths
         '''
         paths = []
+        
         obs_time = get_parameter(kwargs, "obs_time")
         type = get_parameter(kwargs, "type")
         fits_id = get_parameter(kwargs, "fits_id")
@@ -54,7 +55,15 @@ class FitsApi(object):
             if len(r) < 1:
                 raise Exception('not found')
             for items in r:
-                paths.append(items[4])
+                paths.append(os.path.join(self.root_dir, items['path']))
+        else:
+            c, r = self.db.select_many(
+                'select * from t_rawfits where id=?',
+                (fits_id,),
+            )
+            if len(r) < 1:
+                raise Exception('not found')
+            return os.path.join(self.root_dir, r[0]['path'])
         return paths
 
     def read(self, **kwargs):
@@ -76,11 +85,12 @@ class FitsApi(object):
             c, r = self.db.select_one(
                 "select * from t_rawfits where id=?", (fits_id))
             if c == 1:
-                file_path = r["path"]
+                file_path = os.path.join(self.root_dir, r["path"])
 
         if file_path is not None:
+            path = os.path.join(self.root_dir, file_path)
             chunk_size = get_parameter(kwargs, "chunk_size", 1024)
-            with open(file_path, 'r') as f:
+            with open(path, 'r') as f:
                 while True:
                     data = f.read(chunk_size)
                     if not data:
@@ -103,37 +113,46 @@ class FitsApi(object):
             raise Exception("file_path need to be defined")
 
         basename = os.path.basename(file_path)
-        name = basename.split('.fits')[0]
+        name = basename.split('.fits')[0].lower()
         c, r = self.db.select_many(
             "select * from t_rawfits where id=?",
             (name,)
         )
         if len(r) >= 1:
-            print('already upload', name)
+            print('already upload', basename)
             return
 
-        hu = fits.getheader(file_path)
-        obs_time = hu['obst']
-        ccd_num = hu['ccd_num']
+        hu = fits.getheader(os.path.join(self.root_dir, file_path))
+        obs_time = hu['obst'] if 'obst' in hu else 0
+        ccd_num = hu['ccd_num'] if 'ccd_num' in hu else 0
         # print(obs_time, ccd_num)
-        type = 'obs'
-        save_path = os.path.join(self.root_dir, 'fits')
-        save_path = os.path.join(save_path, basename)
+        if 'obs' in name:
+            type = 'obs'
+        elif 'flat' in name:
+            type = 'flat'
+        elif 'bias' in name:
+            type = 'bias'
+        elif 'hgar' in name:
+            type = 'arc'
+        elif 'sky' in name:
+            type = 'sky'
+        else:
+            type = 'None'
+        
 
         self.db.execute(
             'INSERT INTO t_rawfits VALUES(?,?,?,?,?)',
-            (name, obs_time, ccd_num, type, save_path)
+            (basename, obs_time, ccd_num, type, file_path)
         )
         self.db._conn.commit()
-        if file_path != save_path:
-            shutil.copyfile(file_path, save_path)
-        log.info("%s imported.", save_path)
+        log.info("%s imported.", file_path)
 
     def scan2db(self):
         paths = {}
 
-        for (path, _, file_names) in os.walk(os.path.join(self.root_dir, "fits")):
+        for (path, _, file_names) in os.walk(self.root_dir):
             for filename in file_names:
                 if filename.find(".fits") > 0:
-                    self.upload(file_path=os.path.join(path, filename))
+                    filename = os.path.join(path, filename)
+                    self.upload(file_path=filename.replace(self.root_dir, ''))
         return paths

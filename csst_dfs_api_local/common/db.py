@@ -45,7 +45,10 @@ class DBClient(object):
         count = self.__execute(sql, param)
         result = self._cursor.fetchone()
         """:type result:dict"""
-        result = self.__dict_datetime_obj_to_str(result)
+        # result = self.__dict_datetime_obj_to_str(result)
+        result = {
+            key[0]: col for key, col in zip(self._cursor.description, result)
+        }
         return count, result
 
     def select_many(self, sql, param=()):
@@ -58,8 +61,14 @@ class DBClient(object):
         count = self.__execute(sql, param)
         result = self._cursor.fetchall()
         """:type result:list"""
-        [self.__dict_datetime_obj_to_str(row_dict) for row_dict in result]
-        return count, result
+        # result = [self.__dict_datetime_obj_to_str(row_dict) for row_dict in result]
+        r = []
+        for row_dict in result:
+            r.append(
+                {key[0]:col for key, col in zip(self._cursor.description, row_dict)}
+            )
+            
+        return count, r
 
     def execute(self, sql, param=()):
         count = self.__execute(sql, param)
