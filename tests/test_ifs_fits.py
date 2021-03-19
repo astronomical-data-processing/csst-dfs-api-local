@@ -1,28 +1,54 @@
-import logging
 import unittest
-import os
+from astropy.io import fits
 
 from csst_dfs_api_local.ifs import FitsApi
 
-log = logging.getLogger('csst')
 class IFSFitsTestCase(unittest.TestCase):
 
     def setUp(self):
         self.api = FitsApi()
-        # self.api.scan2db()
 
     def test_find(self):
-        path1 = self.api.find(obs_time=900, type='obs')
-        log.info('find', path1)
-        assert len(path1) > 0
-        path2 = self.api.find(fits_id='CCD2_ObsTime_600_ObsNum_8.fits')
-        log.info('find', path2)
-        assert 'CCD2_ObsTime_600_ObsNum_8.fits' in path2
+        recs = self.api.find(file_name='CCD1_ObsTime_300_ObsNum_7.fits')
+        print('find:', recs)
+        assert len(recs) == 1
 
-    
+        recs = self.api.find()
+        print('find:', recs)
+        assert len(recs) > 1
+
     def test_read(self):
-        file = self.api.read(fits_id='CCD2_ObsTime_600_ObsNum_8.fits')
-        log.info('read', str(type(file)))
-        path = self.api.find(obs_time=900, type='obs')
-        file = self.api.read(file_path=path)
-        log.info('read', str(type(file)))
+        recs = self.api.find(file_name='CCD1_ObsTime_300_ObsNum_7.fits')
+        print("The full path: ", os.path.join(self.api.root_dir, recs[0]['file_path']))
+
+        file_segments = self.api.read(file_path=recs[0]['file_path'])
+        file_bytes = b''.join(file_segments)
+        hdul = fits.HDUList.fromstring(file_bytes)
+        print(hdul.info())
+        hdr = hdul[0].header
+        print(repr(hdr))      
+
+    def test_update_proc_status(self):
+        recs = self.api.find(file_name='CCD1_ObsTime_300_ObsNum_7.fits')
+
+        self.api.update_proc_status(fits_id=recs[0]['id'],status=1)
+
+        rec = self.api.get(fits_id=recs[0]['id'])
+        assert rec['prc_status'] == 1
+
+    def test_update_qc0_status(self):
+        recs = self.api.find(file_name='CCD1_ObsTime_300_ObsNum_7.fits')
+
+        self.api.update_qc0_status(fits_id=recs[0]['id'],status=1)
+
+        rec = self.api.get(fits_id=recs[0]['id'])
+        assert rec['qc0_status'] == 1
+
+    def test_write(self):
+        recs = self.api.write(file_path='/opt/temp/csst_ifs/CCD2_ObsTime_1200_ObsNum_40.fits')
+
+        recs = self.api.find(file_name='CCD2_ObsTime_1200_ObsNum_40.fits')
+
+        rec = self.api.get(fits_id=recs[0]['id'])
+
+        print(rec)

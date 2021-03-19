@@ -8,5 +8,15 @@ class DBClientTestCase(unittest.TestCase):
 
     def test_db_init(self):
         db = DBClient()
-        db.select_one("select * from t_rawfits")
+        
+        r = db.select_one("select count(*) as c from ifs_rawfits")
+        if r is not None:
+            print("ifs_rawfits count:", r['c'])
+
+        r = db.exists("select * from ifs_rawfits where id=2323")
+        if r:
+            print("existed")
+        else:
+            print("not existed")
+
     

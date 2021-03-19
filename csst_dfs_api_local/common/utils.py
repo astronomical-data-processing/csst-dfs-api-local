@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 import time
 
@@ -48,3 +49,9 @@ def singleton(cls):
             _instance[cls] = cls()
         return _instance[cls]
     return inner
+
+def create_dir(root_dir, sub_system, time_str: list):
+    the_dir = os.path.join(root_dir, sub_system, time_str)
+    if not os.path.exists(the_dir):
+        os.makedirs(os.path.join(root_dir, sub_system, time_str))
+    return the_dir

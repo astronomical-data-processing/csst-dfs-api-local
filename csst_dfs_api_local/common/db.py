@@ -1,7 +1,7 @@
 import os
 import datetime
 import sqlite3
-from dbutils.persistent_db import PersistentDB
+from DBUtils.PersistentDB import PersistentDB
 from .utils import singleton
 
 import logging
@@ -38,19 +38,28 @@ class DBClient(object):
     
     def __init_db(self):
         with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "db.sql")) as f:
-            self.execute(f.read())
+            statements = f.read().split(";")
+            for s in statements:
+                self.execute(s)
 
     def select_one(self, sql, param=()):
         """查询单个结果"""
-        count = self.__execute(sql, param)
+        _ = self.__execute(sql, param)
         result = self._cursor.fetchone()
         """:type result:dict"""
         # result = self.__dict_datetime_obj_to_str(result)
+        if result is None:
+            return None
         result = {
             key[0]: col for key, col in zip(self._cursor.description, result)
         }
-        return count, result
+        return result
 
+    def exists(self, sql, param=()):
+        _ = self.__execute(sql, param)
+        result = self._cursor.fetchone()
+        return result is not None
+   
     def select_many(self, sql, param=()):
         """
         查询多个结果
@@ -74,14 +83,10 @@ class DBClient(object):
         count = self.__execute(sql, param)
         return count
 
-    def begin(self):
-        """开启事务"""
-        self._conn.autocommit(0)
-
     def end(self, option='commit'):
         """结束事务"""
         if option == 'commit':
-            self._conn.autocommit()
+            self._conn.commit()
         else:
             self._conn.rollback()    
     

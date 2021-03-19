@@ -1,25 +1,43 @@
-# import logging
-# import unittest
+import os
+import unittest
+from astropy.io import fits
 
-# from csst_dfs_api_local.ifs import RefFitsApi
+from csst_dfs_api_local.ifs import RefFitsApi
 
-# log = logging.getLogger('csst')
-# class IFSFitsTestCase(unittest.TestCase):
+class IFSFitsTestCase(unittest.TestCase):
 
-#     def setUp(self):
-#         self.api = RefFitsApi()
-#         self.api.scan2db()
+    def setUp(self):
+        self.api = RefFitsApi()
 
-#     def test_find(self):
-#         path = self.api.find(obs_time=300, type='Flat')
-#         log.info('find', path)
-#         path = self.api.find(fits_id='CCD1_Flat_img.fits')
-#         print(path)
-#         log.info('find', path)
-    
-#     def test_read(self):
-#         file = self.api.read(fits_id='CCD1_Flat_img.fits')
-#         log.info('read', str(type(file)))
-#         path = self.api.find(obs_time=300, type='Flat')
-#         file = self.api.read(file_path=path)
-#         log.info('read', str(type(file)))
+    def test_find(self):
+        recs = self.api.find(exp_time=('2021-03-19 13:42:22', '2021-03-19 15:28:00'), ref_type=RefFitsApi.REF_FITS_FLAT)
+        print('find:', recs)
+        assert len(recs) > 1
+
+        recs = self.api.find()
+        print('=' * 80)
+        print('find:', recs)
+        assert len(recs) > 1
+
+    def test_read(self):
+        recs = self.api.find(file_name='CCD2_Flat_img.fits')
+        print("The full path: ", os.path.join(self.api.root_dir, recs[0]['file_path']))
+
+        file_segments = self.api.read(file_path=recs[0]['file_path'])
+        file_bytes = b''.join(file_segments)
+        hdul = fits.HDUList.fromstring(file_bytes)
+        print(hdul.info())
+        hdr = hdul[0].header
+        print(repr(hdr))      
+
+    def test_update_status(self):
+        recs = self.api.find(file_name='CCD2_Flat_img.fits')
+        self.api.update_status(fits_id=recs[0]['id'],status=1)
+        rec = self.api.get(fits_id=recs[0]['id'])
+        assert rec['status'] == 1
+
+    def test_write(self):
+        recs = self.api.write(file_path='/opt/temp/csst_ifs/CCD3_Flat_img.fits')
+        recs = self.api.find(file_name='CCD3_Flat_img.fits')
+        rec = self.api.get(fits_id=recs[0]['id'])
+        print(rec)
