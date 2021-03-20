@@ -55,3 +55,14 @@ def create_dir(root_dir, sub_system, time_str: list):
     if not os.path.exists(the_dir):
         os.makedirs(os.path.join(root_dir, sub_system, time_str))
     return the_dir
+
+def yield_file_bytes(full_file_path, chunk_size):
+    if not os.path.exists(full_file_path):
+        raise Exception("%s file not found" %(full_file_path))
+    
+    with open(full_file_path, 'rb') as f:
+        while True:
+            data = f.read(chunk_size)
+            if not data:
+                break
+            yield data

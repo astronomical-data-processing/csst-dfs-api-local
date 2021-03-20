@@ -11,10 +11,9 @@ from glob import glob
 from astropy.io import fits
 
 from ..common.db import DBClient
-from ..common.utils import get_parameter, format_time_ms, create_dir
+from ..common.utils import *
 
 log = logging.getLogger('csst')
-
 class FitsApi(object):
     def __init__(self, sub_system = "ifs"):
         self.sub_system = sub_system
@@ -36,14 +35,14 @@ class FitsApi(object):
     def find(self, **kwargs):
         '''
         parameter kwargs:
-            obs_time = [int]
-            file_name = [str]
-            exp_time = (start, end)
-            ccd_num = [int]
-            qc0_status = [int]
+            obs_time = [int],
+            file_name = [str],
+            exp_time = (start, end),
+            ccd_num = [int],
+            qc0_status = [int],
             prc_status = [int]
 
-        return list of paths
+        return list of raw records
         '''
         paths = []
         
@@ -90,9 +89,9 @@ class FitsApi(object):
     def read(self, **kwargs):
         '''
         parameter kwargs:
-            fits_id = [int] 
-            file_path = [str] 
-            chunk_size = [int]
+            fits_id = [int],
+            file_path = [str], 
+            chunk_size = [int] default 20480
 
         yield bytes of fits file
         '''
@@ -106,23 +105,17 @@ class FitsApi(object):
             r = self.db.select_one(
                 "select * from ifs_rawfits where id=?", (fits_id,))
             if r is not None:
-                file_path = os.path.join(self.root_dir, r["file_path"])
+                file_path = r["file_path"]
 
         if file_path is not None:
-            path = os.path.join(self.root_dir, file_path)
-            chunk_size = get_parameter(kwargs, "chunk_size", 1024)
-            with open(path, 'rb') as f:
-                while True:
-                    data = f.read(chunk_size)
-                    if not data:
-                        break
-                    yield data
+            chunk_size = get_parameter(kwargs, "chunk_size", 20480)
+            return yield_file_bytes(os.path.join(self.root_dir, file_path), chunk_size)
 
     def update_proc_status(self, **kwargs):
         '''
         parameter kwargs:
-            fits_id = [int]
-            status = [0 or 1]
+            fits_id = [int],
+            status = [int]
         '''
         fits_id = get_parameter(kwargs, "fits_id")
         status = get_parameter(kwargs, "status")
@@ -143,7 +136,8 @@ class FitsApi(object):
     def update_qc0_status(self, **kwargs):
         '''
         parameter kwargs:
-            fits_id = [int]
+            fits_id = [int],
+            status = [int]
         '''
 
         fits_id = get_parameter(kwargs, "fits_id")
@@ -164,10 +158,9 @@ class FitsApi(object):
 
     def import2db(self, **kwargs):
         '''
+        reduce the header of fits file of server and insert a record into database
         parameter kwargs:
             file_path = [str]
-
-            upload to database
         '''
         file_path = get_parameter(kwargs, "file_path")
 
@@ -204,6 +197,11 @@ class FitsApi(object):
         log.info("raw fits %s imported.", file_path)
 
     def write(self, **kwargs):
+        '''
+        copy a local file to file storage, then reduce the header of fits file and insert a record into database
+        parameter kwargs:
+            file_path = [str]
+        '''        
         file_path = get_parameter(kwargs, "file_path")
 
         if not file_path:

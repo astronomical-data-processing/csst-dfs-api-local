@@ -4,7 +4,7 @@ import time, datetime
 import shutil
 
 from ..common.db import DBClient
-from ..common.utils import get_parameter, format_time_ms, create_dir
+from ..common.utils import *
 
 log = logging.getLogger('csst')
 
@@ -26,11 +26,11 @@ class Result0Api(object):
     def find(self, **kwargs):
         '''
         parameter kwargs:
-            raw_id = [int]
-            file_name = [str]
+            raw_id = [int],
+            file_name = [str],
             proc_type = [str]
 
-        return list of paths
+        return list of level 0 record
         '''
         paths = []
         
@@ -52,7 +52,8 @@ class Result0Api(object):
         return r
         
     def get(self, **kwargs):
-        '''
+        ''' query database, return a record as dict
+
         parameter kwargs:
             fits_id = [int] 
 
@@ -64,11 +65,12 @@ class Result0Api(object):
         return r
 
     def read(self, **kwargs):
-        '''
+        ''' yield bytes of fits file
+
         parameter kwargs:
-            fits_id = [int] 
-            file_path = [str] 
-            chunk_size = [int]
+            fits_id = [int],
+            file_path = [str], 
+            chunk_size = [int] default 20480
 
         yield bytes of fits file
         '''
@@ -82,28 +84,20 @@ class Result0Api(object):
             r = self.db.select_one(
                 "select * from ifs_result_0 where id=?", (fits_id))
             if r is not None:
-                file_path = os.path.join(self.root_dir, r["file_path"])
+                file_path = r["file_path"]
 
         if file_path is not None:
-            path = os.path.join(self.root_dir, file_path)
-            chunk_size = get_parameter(kwargs, "chunk_size", 1024)
-            with open(path, 'rb') as f:
-                while True:
-                    data = f.read(chunk_size)
-                    if not data:
-                        break
-                    yield data
+            chunk_size = get_parameter(kwargs, "chunk_size", 20480)
+            return yield_file_bytes(os.path.join(self.root_dir, file_path), chunk_size)
 
     def write(self, **kwargs):
-        '''
-        parameter kwargs:
-            raw_id = [int]
-            file_path = [str]
-            proc_type = [str]
+        ''' copy a local level 0 file to file storage, and insert a record into database
 
-            insert into database
+        parameter kwargs:
+            raw_id = [int],
+            file_path = [str],
+            proc_type = [str]
         '''
-        
         raw_id = get_parameter(kwargs, "raw_id")
         file_path = get_parameter(kwargs, "file_path")
         proc_type = get_parameter(kwargs, "proc_type", "default")

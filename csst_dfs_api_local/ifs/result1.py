@@ -4,10 +4,9 @@ import time, datetime
 import shutil
 
 from ..common.db import DBClient
-from ..common.utils import get_parameter, format_time_ms, create_dir
+from ..common.utils import *
 
 log = logging.getLogger('csst')
-
 class Result1Api(object):
     def __init__(self, sub_system = "ifs"):
         self.sub_system = sub_system
@@ -26,10 +25,10 @@ class Result1Api(object):
     def find(self, **kwargs):
         '''
         parameter kwargs:
-            file_name = [str]
+            file_name = [str],
             proc_type = [str]
 
-        return list of paths
+        return list of level 1 record
         '''
         paths = []
         
@@ -61,11 +60,12 @@ class Result1Api(object):
         return r, result0s
 
     def read(self, **kwargs):
-        '''
+        ''' yield bytes of fits file
+
         parameter kwargs:
-            fits_id = [int] 
-            file_path = [str] 
-            chunk_size = [int]
+            fits_id = [int],
+            file_path = [str], 
+            chunk_size = [int] default 20480
 
         yield bytes of fits file
         '''
@@ -79,23 +79,17 @@ class Result1Api(object):
             r = self.db.select_one(
                 "select * from ifs_result_1 where id=?", (fits_id))
             if r is not None:
-                file_path = os.path.join(self.root_dir, r["file_path"])
+                file_path = r["file_path"]
 
         if file_path is not None:
-            path = os.path.join(self.root_dir, file_path)
-            chunk_size = get_parameter(kwargs, "chunk_size", 1024)
-            with open(path, 'rb') as f:
-                while True:
-                    data = f.read(chunk_size)
-                    if not data:
-                        break
-                    yield data
+            chunk_size = get_parameter(kwargs, "chunk_size", 20480)
+            return yield_file_bytes(os.path.join(self.root_dir, file_path), chunk_size)
 
     def write(self, **kwargs):
-        '''
+        ''' copy a local level 1 file to file storage, and insert a record into database
         parameter kwargs:
-            file_path = [str]
-            proc_type = [str]
+            file_path = [str],
+            proc_type = [str],
             result0_ids = [list]
 
             insert into database
