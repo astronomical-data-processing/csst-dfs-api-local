@@ -221,7 +221,7 @@ class RefFitsApi(object):
         sql = ['INSERT INTO ifs_raw_ref (fit_id, ref_id, create_time) values ']
         values = ["(%s,%s,%s)"%(i,ref_fits_id,format_time_ms(time.time())) for i in raw_fits_ids]
 
-        self.db.execute(sql + ",".join())
+        self.db.execute(sql + ",".join(values))
 
         self.db.end()
 
