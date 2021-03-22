@@ -35,6 +35,7 @@ class RefFitsApi(object):
         parameter kwargs:
             obs_time = [int],
             file_name = [str],
+            ccd_num = [int],
             exp_time = (start, end),
             status = [int],
             ref_type = [str]
