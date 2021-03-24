@@ -201,7 +201,7 @@ class RefFitsApi(object):
 
         new_file_dir = create_dir(os.path.join(self.root_dir, "refs"),
                 self.sub_system, 
-                "/".join([str(datetime.datetime.now().year),"%02d"%(datetime.datetime.now().month),"%02d"%(datetime.datetime.now().day)]))
+                "/".join([str(datetime.now().year),"%02d"%(datetime.now().month),"%02d"%(datetime.now().day)]))
         
 
         file_basename = os.path.basename(file_path)
