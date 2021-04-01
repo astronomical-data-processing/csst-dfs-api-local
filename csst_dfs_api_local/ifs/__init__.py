@@ -29,7 +29,9 @@ def ingest():
 
                 if file_type in ['obs']:
                     fitsApi.import2db(file_path = file_full_path.replace(root_dir, '')[1:])
+                    print("%s [type:%s] imported" %(file_full_path, file_type))
 
                 if file_type in ['flat', 'bias', 'arc','hgar', 'sky']:
-                    refApi.import2db(file_path = file_full_path.replace(root_dir, '')[1:])                    
+                    refApi.import2db(file_path = file_full_path.replace(root_dir, '')[1:])     
+                    print("%s [type:%s] imported" %(file_full_path, file_type))               
     return paths
