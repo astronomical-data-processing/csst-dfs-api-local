@@ -27,11 +27,14 @@ def ingest():
                 elif 'sky' in filename.lower():
                     file_type = 'sky'
 
+                file_path = file_full_path.replace(root_dir, '')
+                if file_path.index("/") == 0:
+                    file_path = file_path[1:]
                 if file_type in ['obs']:
-                    fitsApi.import2db(file_path = file_full_path.replace(root_dir, '')[1:])
+                    fitsApi.import2db(file_path = file_path)
                     print("%s [type:%s] imported" %(file_full_path, file_type))
 
                 if file_type in ['flat', 'bias', 'arc','hgar', 'sky']:
-                    refApi.import2db(file_path = file_full_path.replace(root_dir, '')[1:])     
+                    refApi.import2db(file_path = file_path)     
                     print("%s [type:%s] imported" %(file_full_path, file_type))               
     return paths

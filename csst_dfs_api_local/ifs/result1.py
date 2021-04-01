@@ -110,10 +110,14 @@ class Result1Api(object):
         shutil.copyfile(file_path, new_file_path)
 
 
+        file_path = new_file_path.replace(self.root_dir, '')
+        if file_path.index("/") == 0:
+            file_path = file_path[1:]
+
         self.db.execute(
             'INSERT INTO ifs_result_1 (filename, file_path,  proc_type, create_time) \
                 VALUES(?,?,?,?)',
-            (file_basename, new_file_path.replace(self.root_dir, '')[1:], proc_type, format_time_ms(time.time()),)
+            (file_basename, file_path, proc_type, format_time_ms(time.time()),)
         )
         self.db.end()
         result1_id = 1

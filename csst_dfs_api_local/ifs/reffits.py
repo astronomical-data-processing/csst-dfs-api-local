@@ -208,7 +208,11 @@ class RefFitsApi(object):
         new_file_path = os.path.join(new_file_dir, file_basename)
         shutil.copyfile(file_path, new_file_path)
 
-        self.import2db(file_path = new_file_path.replace(self.root_dir, '')[1:])
+        file_path = new_file_path.replace(self.root_dir, '')
+        if file_path.index("/") == 0:
+            file_path = file_path[1:]
+
+        self.import2db(file_path = file_path)
         
 
     def associate_raw(self, **kwargs):
