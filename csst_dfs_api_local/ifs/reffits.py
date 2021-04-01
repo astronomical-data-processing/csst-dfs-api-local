@@ -212,14 +212,19 @@ class RefFitsApi(object):
         
 
     def associate_raw(self, **kwargs):
+        ''' associate raw fits to reference file
+        parameter kwargs:
+            raw_fits_ids = [list]
+            ref_fits_id = [int]
+        '''        
         raw_fits_ids = get_parameter(kwargs, "raw_fits_ids")
         ref_fits_id = get_parameter(kwargs, "ref_fits_id")
 
         if raw_fits_ids is None or ref_fits_id is None:
             raise Exception("raw_fits_ids or ref_fits_id is None")
 
-        sql = ['INSERT INTO ifs_raw_ref (fit_id, ref_id, create_time) values ']
-        values = ["(%s,%s,%s)"%(i,ref_fits_id,format_time_ms(time.time())) for i in raw_fits_ids]
+        sql = 'INSERT INTO ifs_raw_ref (fit_id, ref_id, create_time) values '
+        values = ["(%s,%s,'%s')"%(i,ref_fits_id,format_time_ms(time.time())) for i in raw_fits_ids]
 
         self.db.execute(sql + ",".join(values))
 
