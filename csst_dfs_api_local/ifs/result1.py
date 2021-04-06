@@ -39,9 +39,11 @@ class Result1Api(object):
 
         if file_name:
             sql = ["select * from ifs_result_1 where filename='" + file_name + "'"]
-        _, r = self.db.select_many("".join(sql))
+        _, recs = self.db.select_many("".join(sql))
 
-        return r
+        for r in recs:
+            r['file_path'] = os.path.join(self.root_dir, r['file_path'])
+        return recs
 
     def get(self, **kwargs):
         '''
@@ -56,7 +58,8 @@ class Result1Api(object):
             
         _, result0s = self.db.select_many(
             "select result0_id, create_time from ifs_result_0_1 where result1_id=?", (fits_id,))
-
+        if r:
+            r['file_path'] = os.path.join(self.root_dir, r['file_path'])
         return r, result0s
 
     def read(self, **kwargs):

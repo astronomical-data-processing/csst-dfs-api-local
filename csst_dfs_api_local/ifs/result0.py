@@ -47,9 +47,11 @@ class Result0Api(object):
         if file_name:
             sql = ["select * from ifs_result_0 where filename='" + file_name + "'"]
 
-        _, r = self.db.select_many("".join(sql))
+        _, recs = self.db.select_many("".join(sql))
 
-        return r
+        for r in recs:
+            r['file_path'] = os.path.join(self.root_dir, r['file_path'])
+        return recs
         
     def get(self, **kwargs):
         ''' query database, return a record as dict
@@ -62,6 +64,8 @@ class Result0Api(object):
         fits_id = get_parameter(kwargs, "fits_id", -1)
         r = self.db.select_one(
             "select * from ifs_result_0 where id=?", (fits_id,))
+        if r:
+            r['file_path'] = os.path.join(self.root_dir, r['file_path'])            
         return r
 
     def read(self, **kwargs):

@@ -9,6 +9,13 @@ class IFSFitsTestCase(unittest.TestCase):
     def setUp(self):
         self.api = FitsApi()
 
+    def test_get(self):
+        r = self.api.get(fits_id=1111)
+        print('get:', r)
+
+        r = self.api.get(fits_id=1)
+        print('get:', r)
+
     def test_find(self):
         recs = self.api.find(file_name='CCD1_ObsTime_300_ObsNum_7.fits')
         print('find:', recs)

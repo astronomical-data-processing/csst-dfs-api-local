@@ -67,9 +67,11 @@ class RefFitsApi(object):
         if file_name:
             sql = ["select * from ifs_ref_fits where filename='" + file_name + "'"]
         sql.append(" order by exp_time desc")
-        _, r = self.db.select_many("".join(sql))
+        _, recs = self.db.select_many("".join(sql))
 
-        return r
+        for r in recs:
+            r['file_path'] = os.path.join(self.root_dir, r['file_path'])
+        return recs
 
     def get(self, **kwargs):
         '''query database, return a record as dict
@@ -82,6 +84,8 @@ class RefFitsApi(object):
         fits_id = get_parameter(kwargs, "fits_id", -1)
         r = self.db.select_one(
             "select * from ifs_ref_fits where id=?", (fits_id,))
+        if r:
+            r['file_path'] = os.path.join(self.root_dir, r['file_path'])            
         return r
 
     def read(self, **kwargs):
