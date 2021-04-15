@@ -9,6 +9,9 @@ This package provides APIs to access csst's files and databases in your localize
 This library can be installed with the following command: 
 
 ```bash
+git clone https://github.com/astronomical-data-processing/csst-dfs-api-local.git
+cd csst-dfs-api-local
+pip install -r requirements.txt
 python setup.py install
 ```
 

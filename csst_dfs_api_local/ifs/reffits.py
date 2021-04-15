@@ -56,13 +56,13 @@ class RefFitsApi(object):
         if exp_time[0] is not None:
             sql.append(" and exp_time>='" + exp_time[0] + "'")
         if obs_time is not None:
-            sql.append(" and obs_time=" + obs_time)
+            sql.append(" and obs_time=" + repr(obs_time))
         if ccd_num is not None:
-            sql.append(" and ccd_num=" + ccd_num)
+            sql.append(" and ccd_num=" + repr(ccd_num))
         if ref_type is not None:
             sql.append(" and ref_type='" + ref_type + "'")           
         if status is not None:
-            sql.append(" and status=" + status)
+            sql.append(" and status=" + repr(status))
 
         if file_name:
             sql = ["select * from ifs_ref_fits where filename='" + file_name + "'"]

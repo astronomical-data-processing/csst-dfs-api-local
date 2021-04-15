@@ -12,6 +12,7 @@ from astropy.io import fits
 
 from ..common.db import DBClient
 from ..common.utils import *
+from csst_dfs_commons.models import Result
 
 log = logging.getLogger('csst')
 class FitsApi(object):
@@ -36,9 +37,10 @@ class FitsApi(object):
             exp_time = (start, end),
             ccd_num = [int],
             qc0_status = [int],
-            prc_status = [int]
+            prc_status = [int],
+            limit: limits returns the number of records
 
-        return list of raw records
+        return: csst_dfs_common.models.Result
         '''
         paths = []
         
@@ -48,28 +50,40 @@ class FitsApi(object):
         ccd_num = get_parameter(kwargs, "ccd_num")
         qc0_status = get_parameter(kwargs, "qc0_status")
         prc_status = get_parameter(kwargs, "prc_status")
-        
-        sql = []
+        limit = get_parameter(kwargs, "limit", 0)
+        limit = to_int(limit, 0)
 
-        sql.append("select * from ifs_rawfits where exp_time<='" + exp_time[1]+"'")
+        try:
+            
+            sql = []
 
-        if exp_time[0] is not None:
-            sql.append(" and exp_time>='" + exp_time[0] + "'")
-        if obs_time is not None:
-            sql.append(" and obs_time=" + obs_time)
-        if ccd_num is not None:
-            sql.append(" and ccd_num=" + ccd_num)
-        if qc0_status is not None:
-            sql.append(" and qc0_status=" + qc0_status) 
-        if prc_status is not None:
-            sql.append(" and prc_status=" + prc_status)
-        
-        if file_name:
-            sql = ["select * from ifs_rawfits where filename='" + file_name + "'"]
-        _, recs = self.db.select_many("".join(sql))
-        for r in recs:
-            r['file_path'] = os.path.join(self.root_dir, r['file_path'])
-        return recs
+            sql.append("select * from ifs_rawfits where exp_time<='" + exp_time[1]+"'")
+
+            if exp_time[0] is not None:
+                sql.append(" and exp_time>='" + exp_time[0] + "'")
+            if obs_time is not None:
+                sql.append(" and obs_time=" + repr(obs_time))
+            if ccd_num is not None:
+                sql.append(" and ccd_num=" + repr(ccd_num))
+            if qc0_status is not None:
+                sql.append(" and qc0_status=" + repr(qc0_status)) 
+            if prc_status is not None:
+                sql.append(" and prc_status=" + repr(prc_status))
+            if limit > 0:
+                sql.append(f" limit {limit}")
+            
+            if file_name:
+                sql = ["select * from ifs_rawfits where filename='" + file_name + "'"]
+
+            totalCount = self.db.select_one("".join(sql).replace("select * from","select count(*) as v from"))
+
+            _, recs = self.db.select_many("".join(sql))
+            for r in recs:
+                r['file_path'] = os.path.join(self.root_dir, r['file_path'])
+
+            return Result.ok_data(data=recs).append("totalCount", totalCount['v'])
+        except Exception as e:
+            return Result.error(message=e.message)
 
     def get(self, **kwargs):
         '''
@@ -78,12 +92,15 @@ class FitsApi(object):
 
         return dict or None
         '''
-        fits_id = get_parameter(kwargs, "fits_id", -1)
-        r = self.db.select_one(
-            "select * from ifs_rawfits where id=?", (fits_id,))
-        if r:
-            r['file_path'] = os.path.join(self.root_dir, r['file_path'])
-        return r
+        try:
+            fits_id = get_parameter(kwargs, "fits_id", -1)
+            r = self.db.select_one(
+                "select * from ifs_rawfits where id=?", (fits_id,))
+            if r:
+                r['file_path'] = os.path.join(self.root_dir, r['file_path'])
+            return Result.ok_data(data=r)
+        except Exception as e:
+            return Result.error(message=e.message)
 
     def read(self, **kwargs):
         '''
