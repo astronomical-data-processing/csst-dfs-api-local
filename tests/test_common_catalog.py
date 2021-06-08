@@ -10,5 +10,5 @@ class CommonEphemTestCase(unittest.TestCase):
         self.api = CatalogApi()
 
     def test_gaia3_query(self):
-        result = self.api.gaia3_query(ra=56.234, dec=14.4665, radius=1, min_mag=-1, max_mag=-1, obstime=-1, limit=2)
+        result = self.api.gaia3_query(ra=54.234, dec=13.4665, radius=1, min_mag=-1, max_mag=-1, obstime=-1, limit=2)
         print('return:', result)

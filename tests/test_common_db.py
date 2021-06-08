@@ -9,11 +9,11 @@ class DBClientTestCase(unittest.TestCase):
     def test_db_init(self):
         db = DBClient()
         
-        r = db.select_one("select count(*) as c from ifs_rawfits")
+        r = db.select_one("select date('now')")
         if r is not None:
-            print("ifs_rawfits count:", r['c'])
+            print("now:", r)
 
-        r = db.exists("select * from ifs_rawfits where id=2323")
+        r = db.exists("select * from t_observation where id=2323")
         if r:
             print("existed")
         else:

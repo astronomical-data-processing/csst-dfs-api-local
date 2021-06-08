@@ -42,6 +42,9 @@ class DBClient(object):
             for s in statements:
                 self.execute(s)
 
+    def last_row_id(self):
+        return self._cursor.lastrowid
+
     def select_one(self, sql, param=()):
         """查询单个结果"""
         _ = self.__execute(sql, param)
