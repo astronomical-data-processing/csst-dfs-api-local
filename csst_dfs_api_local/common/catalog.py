@@ -1,7 +1,7 @@
 import urllib
 import json
 from csst_dfs_commons.models import Result
-
+from csst_dfs_commons.models.common import from_dict_list, Gaia3Record
 class CatalogApi(object):
     def __init__(self):
         self.data = []
@@ -22,9 +22,9 @@ class CatalogApi(object):
             resp = json.loads(html)
 
             if resp["code"] == 0:
-                return Result.ok_data(data=resp["data"]).append("totalCount", resp["object"]["totalCount"])
+                return Result.ok_data(data=from_dict_list(Gaia3Record, resp["data"])).append("totalCount", resp["object"]["totalCount"])
             else:
-                return Result.error(message = resp.message)
+                return Result.error(message = resp['message'])
 
         except Exception as e:
             return Result.error(message=repr(e))        
