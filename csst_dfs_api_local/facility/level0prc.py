@@ -102,7 +102,7 @@ class Level0PrcApi(object):
             pipeline_id = get_parameter(kwargs, "pipeline_id"),
             prc_module = get_parameter(kwargs, "prc_module"),
             params_id = get_parameter(kwargs, "params_id"),
-            prc_status = get_parameter(kwargs, "prc_status"),
+            prc_status = get_parameter(kwargs, "prc_status", -1),
             prc_time = get_parameter(kwargs, "prc_time"),
             file_path = get_parameter(kwargs, "file_path")
         )

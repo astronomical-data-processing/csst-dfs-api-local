@@ -42,8 +42,8 @@ def ingesst_one(file_path, db, copyfiles):
     
     module_id = header["INSTRUME"]
     obs_type = header["FILETYPE"]
-    qc0_status = 0
-    prc_status = 0
+    qc0_status = -1
+    prc_status = -1
     time_now = datetime.datetime.now()
     create_time = time_now.strftime('%Y-%m-%d %H:%M:%S')
 

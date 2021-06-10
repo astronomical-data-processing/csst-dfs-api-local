@@ -191,7 +191,7 @@ class Level0DataApi(object):
             self.db.execute(
                 'INSERT INTO t_level0_data (obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
                     VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.obs_id, rec.detector_no, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,0,0,format_time_ms(time.time()))
+                (rec.obs_id, rec.detector_no, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
             )
             self.db.end()
             rec.id = self.db.last_row_id()

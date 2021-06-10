@@ -178,7 +178,7 @@ class ObservationApi(object):
             self.db.execute(
                 'INSERT INTO t_observation (id,obs_time,exp_time,module_id,obs_type,facility_status_id, module_status_id, qc0_status,create_time) \
                     VALUES(?,?,?,?,?,?,?,?,?)',
-                (obs_id, obs_time, exp_time, module_id, obs_type, facility_status_id, module_status_id,0,format_time_ms(time.time()))
+                (obs_id, obs_time, exp_time, module_id, obs_type, facility_status_id, module_status_id,-1,format_time_ms(time.time()))
             )
             self.db.end()
 
