@@ -191,7 +191,7 @@ class Level1DataApi(object):
                 filename = get_parameter(kwargs, "filename"),
                 file_path = get_parameter(kwargs, "file_path"),
                 prc_status = get_parameter(kwargs, "prc_status"),
-                prc_time = get_parameter(kwargs, "prc_time"),
+                prc_time = get_parameter(kwargs, "prc_time", format_datetime(datetime.datetime.now())),
                 pipeline_id = get_parameter(kwargs, "pipeline_id")
             )
             existed = self.db.exists(
@@ -203,9 +203,9 @@ class Level1DataApi(object):
                 return Result.error(message=f'{rec.filename} has already been existed') 
 
             self.db.execute(
-                'INSERT INTO ifs_level1_data (raw_id,data_type,cor_sci_id,prc_params,flat_id,dark_id,bias_id,lamp_id,arc_id,sky_id,filename,file_path,qc1_status,prc_status,create_time,pipeline_id) \
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.raw_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.lamp_id, rec.arc_id, rec.sky_id, rec.filename, rec.file_path, 0, 0, format_time_ms(time.time()),rec.pipeline_id,)
+                'INSERT INTO ifs_level1_data (raw_id,data_type,cor_sci_id,prc_params,flat_id,dark_id,bias_id,lamp_id,arc_id,sky_id,filename,file_path,qc1_status,prc_status,prc_time, create_time,pipeline_id) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                (rec.raw_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.lamp_id, rec.arc_id, rec.sky_id, rec.filename, rec.file_path, -1, -1,rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
             )
             self.db.end()
             rec.id = self.db.last_row_id()
