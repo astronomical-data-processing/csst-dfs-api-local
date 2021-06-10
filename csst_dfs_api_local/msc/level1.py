@@ -202,7 +202,7 @@ class Level1DataApi(object):
             self.db.execute(
                 'INSERT INTO msc_level1_data (raw_id,data_type,cor_sci_id,prc_params,flat_id,dark_id,bias_id,filename,file_path,qc1_status,prc_status,prc_time,create_time,pipeline_id) \
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.raw_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.filename, rec.file_path, -1, -1, rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
+                (rec.raw_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.filename, rec.file_path, -1, rec.prc_status, rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
             )
             self.db.end()
             rec.id = self.db.last_row_id()
