@@ -165,7 +165,8 @@ class ObservationApi(object):
         try:
             if obs_id == 0:
                 r = self.db.select_one("select max(id) as max_id from t_observation")
-                obs_id = r["max_id"]+1
+                max_id = 0 if r["max_id"] is None else r["max_id"]
+                obs_id = max_id + 1
 
             existed = self.db.exists(
                 "select * from t_observation where id=?",
