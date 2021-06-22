@@ -90,8 +90,8 @@ def ingesst_one(file_path, db, copyfiles):
     #level0-header
     ra_obj = header["RA_OBJ"]
     dec_obj = header["DEC_OBJ"]
-
-    c = db.execute("insert into t_level0_header \
+    db.execute("delete from t_level0_header where id=?",(level0_id,))    
+    db.execute("insert into t_level0_header \
         (id, obs_time, exp_time, ra, `dec`, create_time) \
         values (?,?,?,?,?,?)",
         (level0_id, exp_start_time, exp_time, ra_obj, dec_obj, create_time))
