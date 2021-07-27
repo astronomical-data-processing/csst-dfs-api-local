@@ -12,7 +12,7 @@ def ingest():
     db = DBClient()
     parser = argparse.ArgumentParser(prog=f"{sys.argv[0]}", description="ingest the local files")
     parser.add_argument('-i','--infile', dest="infile", help="a file or a directory")
-    parser.add_argument('-m', '--copyfiles', dest="copyfiles", action='store_true', default=False, help="move files after import")
+    parser.add_argument('-m', '--copyfiles', dest="copyfiles", action='store_true', default=False, help="copy files after import")
     args = parser.parse_args(sys.argv[1:])
     
     import_root_dir = args.infile
@@ -50,13 +50,13 @@ def ingesst_one(file_path, db, copyfiles):
     facility_status_id = 0
     module_status_id = 0
 
-    existed = db.exists("select * from t_observation where id=?", (obs_id,))
+    existed = db.exists("select * from t_observation where obs_id=?", (obs_id,))
     if not existed:
         db.execute("insert into t_observation \
-            (id,obs_time,exp_time,module_id,obs_type,facility_status_id, module_status_id, qc0_status, prc_status,create_time) \
+            (obs_id,obs_time,exp_time,module_id,obs_type,facility_status_id, module_status_id, qc0_status, prc_status,create_time) \
             values (?,?,?,?,?,?,?,?,?,?)",
         (obs_id,exp_start_time,exp_time,module_id,obs_type,facility_status_id,module_status_id,qc0_status, prc_status,create_time))
-
+        db.end()
     #level0
     detector = header["DETECTOR"]
     filename = header["FILENAME"]
@@ -75,26 +75,27 @@ def ingesst_one(file_path, db, copyfiles):
     file_full_path = file_path
 
     if copyfiles:
-        obs_id_str = "%07d" % (obs_id)
-        file_dir = f"{dest_root_dir}/{module_id}/{obs_type.upper()}/{header['EXPSTART']}/{obs_id_str}/MS"
+        file_dir = f"{dest_root_dir}/{module_id}/{obs_type.upper()}/{header['EXPSTART']}/{obs_id}/MS"
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
-        file_full_path = f"{file_dir}/{filename}.fits"  
+        file_full_path = f"{file_dir}/{filename}.fits"
+
+    level0_id = f"{obs_id}{detector}"  
 
     c = db.execute("insert into t_level0_data \
-        (obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
-        values (?,?,?,?,?,?,?,?,?,?,?)",
-        (obs_id, detector, obs_type, exp_start_time, exp_time, detector_status_id, filename, file_full_path, qc0_status, prc_status,create_time))
+        (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
+        values (?,?,?,?,?,?,?,?,?,?,?,?)",
+        (level0_id, obs_id, detector, obs_type, exp_start_time, exp_time, detector_status_id, filename, file_full_path, qc0_status, prc_status,create_time))
     db.end()
-    level0_id = db.last_row_id()
+    level0_id_id = db.last_row_id()
     #level0-header
     ra_obj = header["RA_OBJ"]
     dec_obj = header["DEC_OBJ"]
-    db.execute("delete from t_level0_header where id=?",(level0_id,))    
+    db.execute("delete from t_level0_header where id=?",(level0_id_id,))    
     db.execute("insert into t_level0_header \
         (id, obs_time, exp_time, ra, `dec`, create_time) \
         values (?,?,?,?,?,?)",
-        (level0_id, exp_start_time, exp_time, ra_obj, dec_obj, create_time))
+        (level0_id_id, exp_start_time, exp_time, ra_obj, dec_obj, create_time))
     
     if copyfiles:
         #copy files

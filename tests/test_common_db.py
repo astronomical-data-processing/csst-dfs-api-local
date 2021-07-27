@@ -13,7 +13,7 @@ class DBClientTestCase(unittest.TestCase):
         if r is not None:
             print("now:", r)
 
-        r = db.exists("select * from t_observation where id=2323")
+        r = db.exists("select * from t_observation where id=1")
         if r:
             print("existed")
         else:

@@ -68,43 +68,69 @@ class ObservationApi(object):
     def get(self, **kwargs):
         '''
         parameter kwargs:
-            obs_id = [int] 
+            id = [int],
+            obs_id = [str] 
 
         return dict or None
         '''
+        id = get_parameter(kwargs, "id", 0)
+        obs_id = get_parameter(kwargs, "obs_id", "")
+
+        if id == 0 and obs_id == "":
+            return Result.error(message="at least define id or obs_id") 
+
+        if id != 0: 
+            return self.get_by_id(id)
+        if obs_id != "": 
+            return self.get_by_obs_id(obs_id)
+
+    def get_by_id(self, id: int):
         try:
-            obs_id = get_parameter(kwargs, "obs_id", -1)
             r = self.db.select_one(
-                "select * from t_observation where id=?", (obs_id,))
+                "select * from t_observation where id=?", (id,))
+            if r:
+                return Result.ok_data(data=Observation().from_dict(r))
+            else:
+                return Result.error(message=f"id:{id} not found") 
+
+        except Exception as e:
+            log.error(e)
+            return Result.error(message=str(e))  
+
+    def get_by_obs_id(self, obs_id: str):
+        try:
+            r = self.db.select_one(
+                "select * from t_observation where obs_id=?", (obs_id,))
             if r:
                 return Result.ok_data(data=Observation().from_dict(r))
             else:
                 return Result.error(message=f"obs_id:{obs_id} not found")  
         except Exception as e:
             log.error(e)
-            return Result.error(message=str(e))        
+            return Result.error(message=str(e))  
+
     def update_proc_status(self, **kwargs):
         ''' update the status of reduction
 
         parameter kwargs:
-            obs_id : [int],
+            id : [int],
+            obs_id : [str],
             status : [int]
 
         return csst_dfs_common.models.Result
         '''
-        obs_id = get_parameter(kwargs, "obs_id")
+        id = get_parameter(kwargs, "id", 0)
+        obs_id = get_parameter(kwargs, "obs_id", "")
+        result = self.get(id = id, obs_id = obs_id)
+        if not result.success:
+            return Result.error(message="not found")
+
+        id = result.data.id
         status = get_parameter(kwargs, "status")
         try:
-            existed = self.db.exists(
-                "select * from t_observation where id=?",
-                (obs_id,)
-            )
-            if not existed:
-                log.warning('%s not found' %(obs_id, ))
-                return Result.error(message ='%s not found' %(obs_id, ))
             self.db.execute(
                 'update t_observation set prc_status=?, prc_time=? where id=?',
-                (status, format_time_ms(time.time()), obs_id)
+                (status, format_time_ms(time.time()), id)
             )  
             self.db.end() 
             return Result.ok_data()
@@ -117,22 +143,22 @@ class ObservationApi(object):
         ''' update the status of QC0
         
         parameter kwargs:
-            obs_id : [int],
+            id : [int],
+            obs_id : [str],
             status : [int]
         '''        
-        obs_id = get_parameter(kwargs, "obs_id")
+        id = get_parameter(kwargs, "id", 0)
+        obs_id = get_parameter(kwargs, "obs_id", "")
+        result = self.get(id = id, obs_id = obs_id)
+        if not result.success:
+            return Result.error(message="not found")
+
+        id = result.data.id
         status = get_parameter(kwargs, "status")
         try:
-            existed = self.db.exists(
-                "select * from t_observation where id=?",
-                (obs_id,)
-            )
-            if not existed:
-                log.warning('%s not found' %(obs_id, ))
-                return Result.error(message ='%s not found' %(obs_id, ))
             self.db.execute(
                 'update t_observation set qc0_status=?, qc0_time=? where id=?',
-                (status, format_time_ms(time.time()), obs_id)
+                (status, format_time_ms(time.time()), id)
             )  
             self.db.end() 
             return Result.ok_data()
@@ -145,7 +171,8 @@ class ObservationApi(object):
         ''' insert a observational record into database
  
         parameter kwargs:
-            obs_id = [int]
+            id = [int]
+            obs_id = [str]
             obs_time = [str]
             exp_time = [int]
             module_id = [str]
@@ -154,7 +181,8 @@ class ObservationApi(object):
             module_status_id = [int]
         return: csst_dfs_common.models.Result
         '''   
-        obs_id = get_parameter(kwargs, "obs_id", 0)
+        id = get_parameter(kwargs, "id", 0)
+        obs_id = get_parameter(kwargs, "obs_id")
         obs_time = get_parameter(kwargs, "obs_time")
         exp_time = get_parameter(kwargs, "exp_time")
         module_id = get_parameter(kwargs, "module_id")
@@ -163,27 +191,28 @@ class ObservationApi(object):
         module_status_id = get_parameter(kwargs, "module_status_id")
 
         try:
-            if obs_id == 0:
+            if id == 0:
                 r = self.db.select_one("select max(id) as max_id from t_observation")
                 max_id = 0 if r["max_id"] is None else r["max_id"]
-                obs_id = max_id + 1
+                id = max_id + 1
+                obs_id = "%07d"%(id,)
 
             existed = self.db.exists(
-                "select * from t_observation where id=?",
-                (obs_id,)
+                "select * from t_observation where id=? or obs_id=?",
+                (id, obs_id,)
             )
             if existed:
                 log.warning('%s existed' %(obs_id, ))
                 return Result.error(message ='%s existed' %(obs_id, ))
 
             self.db.execute(
-                'INSERT INTO t_observation (id,obs_time,exp_time,module_id,obs_type,facility_status_id, module_status_id, qc0_status,create_time) \
-                    VALUES(?,?,?,?,?,?,?,?,?)',
-                (obs_id, obs_time, exp_time, module_id, obs_type, facility_status_id, module_status_id,-1,format_time_ms(time.time()))
+                'INSERT INTO t_observation (id,obs_id,obs_time,exp_time,module_id,obs_type,facility_status_id, module_status_id, qc0_status,create_time) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?)',
+                (id, obs_id, obs_time, exp_time, module_id, obs_type, facility_status_id, module_status_id,-1,format_time_ms(time.time()))
             )
             self.db.end()
 
-            return self.get(obs_id = obs_id)
+            return self.get(id = id)
 
         except Exception as e:
             log.error(e)

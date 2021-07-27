@@ -8,7 +8,8 @@ class IFSResult1TestCase(unittest.TestCase):
         self.api = Level1DataApi()
 
     def test_find(self):
-        recs = self.api.find(raw_id=11,
+        recs = self.api.find(
+            level0_id='0000223',
             create_time = ("2021-06-01 11:12:13","2021-06-08 11:12:13"))
         print('find:', recs)
 
@@ -25,7 +26,8 @@ class IFSResult1TestCase(unittest.TestCase):
         print('update_qc1_status:', rec)
 
     def test_write(self):
-        rec = self.api.write(raw_id=11, 
+        rec = self.api.write(
+            level0_id='0000223', 
             data_type = "sci",
             cor_sci_id = 2,
             prc_params = "/opt/dddasd.params",

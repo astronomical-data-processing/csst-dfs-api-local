@@ -36,7 +36,7 @@ drop table if exists t_observation;
 create table ifs_level1_data
 (
    id                   integer PRIMARY KEY autoincrement,
-   raw_id               int(20) not null,
+   level0_id            varchar(20) not null,
    data_type            varchar(64) not null,
    cor_sci_id           int(20),
    prc_params           varchar(1024),
@@ -76,7 +76,7 @@ create table ifs_level1_header
 create table msc_level1_data
 (
    id                   integer PRIMARY KEY autoincrement,
-   raw_id               int(20) not null,
+   level0_id            varchar(20) not null,
    data_type            varchar(64) not null,
    cor_sci_id           int(20),
    prc_params           varchar(1024),
@@ -113,7 +113,7 @@ create table msc_level1_header
 create table t_cal2level0
 (
    merge_id             int(20) not null,
-   level0_id            int(20) not null,
+   level0_id            varchar(20) not null,
    primary key (merge_id, level0_id)
 );
 
@@ -137,7 +137,8 @@ create table t_cal_header
 create table t_cal_merge
 (
    id                   integer PRIMARY KEY autoincrement,
-   detector_no          varchar(64) not null,
+   cal_id               varchar(20) not null,
+   detector_no          varchar(10) not null,
    ref_type             varchar(16),
    obs_time             datetime,
    exp_time             float,
@@ -155,7 +156,7 @@ create table t_cal_merge
 /*==============================================================*/
 create table t_detector
 (
-   no                   varchar(64) not null,
+   no                   varchar(10) not null,
    detector_name        varchar(256) not null,
    module_id            varchar(20),
    filter_id            varchar(20),
@@ -170,7 +171,7 @@ create table t_detector
 create table t_detector_status
 (
    id                   integer PRIMARY KEY autoincrement,
-   detector_no          varchar(64) not null,
+   detector_no          varchar(10) not null,
    status               varchar(256) not null,
    status_time          datetime,
    create_time          datetime
@@ -205,8 +206,9 @@ create table t_guiding
 create table t_level0_data
 (
    id                   integer PRIMARY KEY autoincrement,
-   obs_id               int(20) not null,
-   detector_no          varchar(64) not null,
+   level0_id            varchar(20) not null,
+   obs_id               varchar(10) not null,
+   detector_no          varchar(10) not null,
    obs_type             varchar(16),
    obs_time             datetime,
    exp_time             float,
@@ -240,13 +242,13 @@ create table t_level0_header
 create table t_level0_prc
 (
    id                   integer PRIMARY KEY autoincrement,
-   level0_id            int(20) not null,
+   level0_id            varchar(20) not null,
    pipeline_id          varchar(64) not null,
    prc_module           varchar(32) not null,
-   params_id            varchar(256),
+   params_file_path     varchar(256),
    prc_status           int(2),
    prc_time             datetime,
-   file_path            varchar(256)
+   result_file_path            varchar(256)
 );
 
 /*==============================================================*/
@@ -267,6 +269,7 @@ create table t_module_status
 create table t_observation
 (
    id                   integer PRIMARY KEY autoincrement,
+   obs_id               varchar(10),
    obs_time             datetime,
    exp_time             float,
    module_id            varchar(20),

@@ -20,7 +20,7 @@ class Level0PrcApi(object):
         ''' retrieve level0 procedure records from database
 
         parameter kwargs:
-            level0_id: [int]
+            level0_id: [str]
             pipeline_id: [str]
             prc_module: [str]
             prc_status : [int]
@@ -35,7 +35,7 @@ class Level0PrcApi(object):
 
             sql_data = f"select * from t_level0_prc"
 
-            sql_condition = f"where level0_id={level0_id}"
+            sql_condition = f"where level0_id='{level0_id}'"
             if pipeline_id:
                 sql_condition = sql_condition + " and pipeline_id='" + pipeline_id + "'"
             if prc_module:
@@ -86,13 +86,13 @@ class Level0PrcApi(object):
         ''' insert a level0 procedure record into database
  
         parameter kwargs:
-            level0_id : [int]
+            level0_id : [str]
             pipeline_id : [str]
             prc_module : [str]
-            params_id : [str]
+            params_file_path : [str]
             prc_status : [int]
             prc_time : [str]
-            file_path : [str]
+            result_file_path : [str]
         return csst_dfs_common.models.Result
         '''   
 
@@ -101,16 +101,16 @@ class Level0PrcApi(object):
             level0_id = get_parameter(kwargs, "level0_id"),
             pipeline_id = get_parameter(kwargs, "pipeline_id"),
             prc_module = get_parameter(kwargs, "prc_module"),
-            params_id = get_parameter(kwargs, "params_id"),
+            params_file_path = get_parameter(kwargs, "params_file_path"),
             prc_status = get_parameter(kwargs, "prc_status", -1),
             prc_time = get_parameter(kwargs, "prc_time"),
-            file_path = get_parameter(kwargs, "file_path")
+            result_file_path = get_parameter(kwargs, "result_file_path")
         )
         try:
             self.db.execute(
-                'INSERT INTO t_level0_prc (level0_id,pipeline_id,prc_module, params_id,prc_status,prc_time,file_path) \
+                'INSERT INTO t_level0_prc (level0_id,pipeline_id,prc_module, params_file_path, prc_status,prc_time,result_file_path) \
                     VALUES(?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.pipeline_id, rec.prc_module, rec.params_id, rec.prc_status, rec.prc_time, rec.file_path)
+                (rec.level0_id, rec.pipeline_id, rec.prc_module, rec.params_file_path, rec.prc_status, rec.prc_time, rec.result_file_path)
             )
             self.db.end()
             rec.id = self.db.last_row_id()

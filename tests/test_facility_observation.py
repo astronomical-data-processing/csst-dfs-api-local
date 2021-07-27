@@ -12,7 +12,7 @@ class FacilityObservationTestCase(unittest.TestCase):
         print('find:', recs)
 
     def test_get(self):
-        rec = self.api.get(obs_id=11)
+        rec = self.api.get(obs_id='0000022')
         print('get:', rec)
 
     def test_update_proc_status(self):
@@ -25,6 +25,8 @@ class FacilityObservationTestCase(unittest.TestCase):
 
     def test_write(self):
         rec = self.api.write(
+            id = 0,
+            obs_id = "",
             obs_time = "2021-06-06 11:12:13",
             exp_time = 150,
             module_id = "MSC",

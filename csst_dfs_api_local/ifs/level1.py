@@ -21,7 +21,7 @@ class Level1DataApi(object):
         ''' retrieve level1 records from database
 
         parameter kwargs:
-            raw_id: [int]
+            level0_id: [str]
             data_type: [str]
             obs_type: [str]
             create_time : (start, end),
@@ -33,7 +33,7 @@ class Level1DataApi(object):
         return: csst_dfs_common.models.Result
         '''
         try:
-            raw_id = get_parameter(kwargs, "raw_id")
+            level0_id = get_parameter(kwargs, "level0_id")
             data_type = get_parameter(kwargs, "data_type")
             create_time_start = get_parameter(kwargs, "create_time", [None, None])[0]
             create_time_end = get_parameter(kwargs, "create_time", [None, None])[1]
@@ -46,8 +46,8 @@ class Level1DataApi(object):
             sql_data = f"select * from ifs_level1_data where 1=1"
 
             sql_condition = "" 
-            if raw_id:
-                sql_condition = f"{sql_condition} and raw_id={raw_id}"
+            if level0_id:
+                sql_condition = f"{sql_condition} and level0_id='{level0_id}'"
             if data_type:
                 sql_condition = f"{sql_condition} and data_type='{data_type}'"
             if create_time_start:
@@ -72,7 +72,7 @@ class Level1DataApi(object):
             return Result.ok_data(data=from_dict_list(Level1Record, recs)).append("totalCount", totalCount['c'])
 
         except Exception as e:
-            return Result.error(message=e.message)
+            return Result.error(message=str(e))
         
 
     def get(self, **kwargs):
@@ -93,7 +93,7 @@ class Level1DataApi(object):
                 return Result.error(message=f"id:{fits_id} not found")  
         except Exception as e:
             log.error(e)
-            return Result.error(message=e.message)        
+            return Result.error(message=str(e))        
 
     def update_proc_status(self, **kwargs):
         ''' update the status of reduction
@@ -123,7 +123,7 @@ class Level1DataApi(object):
            
         except Exception as e:
             log.error(e)
-            return Result.error(message=e.message)
+            return Result.error(message=str(e))
 
     def update_qc1_status(self, **kwargs):
         ''' update the status of QC1
@@ -151,13 +151,13 @@ class Level1DataApi(object):
            
         except Exception as e:
             log.error(e)
-            return Result.error(message=e.message)
+            return Result.error(message=str(e))
 
     def write(self, **kwargs):
         ''' insert a level1 record into database
  
         parameter kwargs:
-            raw_id : [int]
+            level0_id : [str]
             data_type : [str]
             cor_sci_id : [int]
             prc_params : [str]
@@ -178,7 +178,7 @@ class Level1DataApi(object):
         try:
             rec = Level1Record(
                 id = 0,
-                raw_id = get_parameter(kwargs, "raw_id"),
+                level0_id = get_parameter(kwargs, "level0_id"),
                 data_type = get_parameter(kwargs, "data_type"),
                 cor_sci_id = get_parameter(kwargs, "cor_sci_id"),
                 prc_params = get_parameter(kwargs, "prc_params"),
@@ -191,7 +191,7 @@ class Level1DataApi(object):
                 filename = get_parameter(kwargs, "filename"),
                 file_path = get_parameter(kwargs, "file_path"),
                 prc_status = get_parameter(kwargs, "prc_status", -1),
-                prc_time = get_parameter(kwargs, "prc_time", format_datetime(datetime.datetime.now())),
+                prc_time = get_parameter(kwargs, "prc_time", format_datetime(datetime.now())),
                 pipeline_id = get_parameter(kwargs, "pipeline_id")
             )
             existed = self.db.exists(
@@ -203,9 +203,9 @@ class Level1DataApi(object):
                 return Result.error(message=f'{rec.filename} has already been existed') 
 
             self.db.execute(
-                'INSERT INTO ifs_level1_data (raw_id,data_type,cor_sci_id,prc_params,flat_id,dark_id,bias_id,lamp_id,arc_id,sky_id,filename,file_path,qc1_status,prc_status,prc_time, create_time,pipeline_id) \
+                'INSERT INTO ifs_level1_data (level0_id,data_type,cor_sci_id,prc_params,flat_id,dark_id,bias_id,lamp_id,arc_id,sky_id,filename,file_path,qc1_status,prc_status,prc_time, create_time,pipeline_id) \
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.raw_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.lamp_id, rec.arc_id, rec.sky_id, rec.filename, rec.file_path, -1, rec.prc_status,rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
+                (rec.level0_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.lamp_id, rec.arc_id, rec.sky_id, rec.filename, rec.file_path, -1, rec.prc_status,rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
             )
             self.db.end()
             rec.id = self.db.last_row_id()
@@ -213,4 +213,4 @@ class Level1DataApi(object):
             return Result.ok_data(data=rec)
         except Exception as e:
             log.error(e)
-            return Result.error(message=e.message)            
+            return Result.error(message=str(e))            

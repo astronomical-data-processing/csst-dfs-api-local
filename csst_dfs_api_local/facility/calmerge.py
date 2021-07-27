@@ -81,12 +81,24 @@ class CalMergeApi(object):
         '''  fetch a record from database
 
         parameter kwargs:
-            id : [int] 
+            id : [int],
+            cal_id : [str]
 
         return csst_dfs_common.models.Result
         '''
+        id = get_parameter(kwargs, "id", 0)
+        cal_id = get_parameter(kwargs, "cal_id", "")
+
+        if id == 0 and cal_id == "":
+            return Result.error(message="at least define id or cal_id") 
+
+        if id != 0: 
+            return self.get_by_id(id)
+        if cal_id != "": 
+            return self.get_by_cal_id(cal_id)
+
+    def get_by_id(self, id: str):
         try:
-            id = get_parameter(kwargs, "id")
             r = self.db.select_one(
                 "select * from t_cal_merge where id=?", (id,))
             if r:
@@ -99,7 +111,28 @@ class CalMergeApi(object):
                 rec.level0_ids = level0_ids
                 return Result.ok_data(data=rec)
             else:
-                return Result.error(message=f"id:{id} not found")  
+                return Result.error(message=f"id:{id} not found")
+                    
+        except Exception as e:
+            log.error(e)
+            return Result.error(message=str(e))
+
+    def get_by_cal_id(self, cal_id: str):
+        try:
+            r = self.db.select_one(
+                "select * from t_cal_merge where cal_id=?", (cal_id,))
+            if r:
+
+                sql_get_level0_id = f"select level0_id from t_cal2level0 where merge_id={r['id']}" 
+                _, records = self.db.select_many(sql_get_level0_id)
+                level0_ids = [r["level0_id"] for r in records]
+
+                rec = CalMergeRecord().from_dict(r)
+                rec.level0_ids = level0_ids
+                return Result.ok_data(data=rec)
+            else:
+                return Result.error(message=f"id:{id} not found")
+                    
         except Exception as e:
             log.error(e)
             return Result.error(message=str(e))
@@ -109,20 +142,22 @@ class CalMergeApi(object):
 
         parameter kwargs:
             id : [int],
+            cal_id : [str],
             status : [int]
 
         return csst_dfs_common.models.Result
         '''
-        id = get_parameter(kwargs, "id")
+        id = get_parameter(kwargs, "id", 0)
+        cal_id = get_parameter(kwargs, "cal_id", "")
+        result = self.get(id = id, cal_id = cal_id)
+
+        if not result.success:
+            return Result.error(message="not found")
+
+        id = result.data.id
         status = get_parameter(kwargs, "status")
+
         try:
-            existed = self.db.exists(
-                "select * from t_cal_merge where id=?",
-                (id,)
-            )
-            if not existed:
-                log.warning('%s not found' %(id, ))
-                return Result.error(message ='%s not found' %(id, ))
             self.db.execute(
                 'update t_cal_merge set qc1_status=?, qc1_time=? where id=?',
                 (status, format_time_ms(time.time()), id)
@@ -132,18 +167,26 @@ class CalMergeApi(object):
            
         except Exception as e:
             log.error(e)
-            return Result.error(message=e.message)
+            return Result.error(message=str(e))
 
     def update_proc_status(self, **kwargs):
         ''' update the status of reduction
 
         parameter kwargs:
             id : [int],
+            cal_id : [str],
             status : [int]
 
         return csst_dfs_common.models.Result
         '''
-        id = get_parameter(kwargs, "id")
+        id = get_parameter(kwargs, "id", 0)
+        cal_id = get_parameter(kwargs, "cal_id", "")
+        result = self.get(id = id, cal_id = cal_id)
+
+        if not result.success:
+            return Result.error(message="not found")
+
+        id = result.data.id
         status = get_parameter(kwargs, "status")
 
         try:
@@ -163,13 +206,13 @@ class CalMergeApi(object):
            
         except Exception as e:
             log.error(e)
-            return Result.error(message=e.message)
+            return Result.error(message=str(e))
 
     def write(self, **kwargs):
         ''' insert a calibration merge record into database
  
         parameter kwargs:
-            id : [int]
+            cal_id : [str]
             detector_no : [str]
             ref_type : [str]
             obs_time : [str]
@@ -184,6 +227,7 @@ class CalMergeApi(object):
 
         rec = CalMergeRecord(
             id = 0,
+            cal_id =  get_parameter(kwargs, "cal_id"),
             detector_no = get_parameter(kwargs, "detector_no"),
             ref_type = get_parameter(kwargs, "ref_type"),
             obs_time = get_parameter(kwargs, "obs_time"),
@@ -196,9 +240,9 @@ class CalMergeApi(object):
         )
         try:
             self.db.execute(
-                'INSERT INTO t_cal_merge (detector_no,ref_type,obs_time,exp_time,filename,file_path,prc_status,prc_time,create_time) \
-                    VALUES(?,?,?,?,?,?,?,?,?)',
-                (rec.detector_no, rec.ref_type, rec.obs_time, rec.exp_time, rec.filename, rec.file_path,rec.prc_status,rec.prc_time,format_time_ms(time.time()))
+                'INSERT INTO t_cal_merge (cal_id,detector_no,ref_type,obs_time,exp_time,filename,file_path,prc_status,prc_time,create_time) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?)',
+                (rec.cal_id, rec.detector_no, rec.ref_type, rec.obs_time, rec.exp_time, rec.filename, rec.file_path,rec.prc_status,rec.prc_time,format_time_ms(time.time()))
             )
             self.db.end()
             rec.id = self.db.last_row_id()
