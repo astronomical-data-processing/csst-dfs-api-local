@@ -8,6 +8,7 @@ from ..common.utils import *
 from csst_dfs_commons.models import Result
 from csst_dfs_commons.models.facility import CalMergeRecord
 from csst_dfs_commons.models.common import from_dict_list
+from .level0 import Level0DataApi
 
 log = logging.getLogger('csst')
 
@@ -15,6 +16,43 @@ class CalMergeApi(object):
     def __init__(self):
         self.root_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
         self.db = DBClient()
+        self.level0Api = Level0DataApi()
+
+    def get_latest_by_l0(self, **kwargs):
+        ''' retrieve calibration merge records from database by level0 data
+        
+        :param kwargs: Parameter dictionary, key items support:
+            level0_id: [str],
+            ref_type: [str]
+
+        :returns: csst_dfs_common.models.Result
+        '''
+        try:
+            level0_id = get_parameter(kwargs, "level0_id")
+            ref_type = get_parameter(kwargs, "ref_type")
+
+            level0_data = self.level0Api.get_by_level0_id(level0_id)
+            if level0_data is None:
+                return Result.error(message = "level0 data [%s]not found"%(level0_id))
+            
+            sql_data = f"select * from t_cal_merge where detector_no='{level0_data.data.detector_no}' and ref_type='{ref_type}' and obs_time >= '{level0_data.data.obs_time}' order by obs_time ASC limit 1"
+
+            r = self.db.select_one(sql_data)
+            if r:
+                rec = CalMergeRecord().from_dict(r)
+                return Result.ok_data(data=rec)
+            
+            sql_data = f"select * from t_cal_merge where detector_no='{level0_data.data.detector_no}' and ref_type='{ref_type}' and obs_time <= '{level0_data.data.obs_time}' order by obs_time DESC limit 1"
+
+            r = self.db.select_one(sql_data)
+            if r:
+                rec = CalMergeRecord().from_dict(r)
+                return Result.ok_data(data=rec)            
+
+            return Result.error(message = "not found")
+
+        except Exception as e:
+            return Result.error(message=str(e))
 
     def find(self, **kwargs):
         ''' retrieve calibration merge records from database

@@ -15,6 +15,10 @@ class CalMergeApiTestCase(unittest.TestCase):
             obs_time = ("2021-06-01 11:12:13","2021-06-08 11:12:13"))
         print('find:', recs)
 
+    def test_get_latest_by_l0(self):
+        rec = self.api.get_latest_by_l0(level0_id='000001301', ref_type = "bias")
+        print('get:', rec)
+
     def test_get(self):
         rec = self.api.get(cal_id='0000231')
         print('get:', rec)
