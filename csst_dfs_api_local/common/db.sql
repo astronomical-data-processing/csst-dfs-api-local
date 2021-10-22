@@ -29,7 +29,64 @@ drop table if exists t_level0_prc;
 drop table if exists t_module_status;
 
 drop table if exists t_observation;
-
+/*==============================================================*/
+/* Table: sls_level1_data                                       */
+/*==============================================================*/
+create table sls_level1_data
+(
+   id                   integer PRIMARY KEY autoincrement,
+   level0_id            varchar(20) not null,
+   data_type            varchar(64) not null,
+   prc_params           varchar(1024),
+   filename             varchar(128),
+   file_path            varchar(256),
+   prc_status           tinyint(1),
+   prc_time             datetime,
+   qc1_status           tinyint(1),
+   qc1_time             datetime,
+   create_time          datetime,
+   pipeline_id          varchar(60)
+);
+/*==============================================================*/
+/* Table: sls_level1_ref                                       */
+/*==============================================================*/
+create table sls_level1_ref (
+  level1_id int(20) not null,
+  ref_type varchar(64) not null,
+  cal_id int(20) not null,
+  primary key (level1_id, ref_type)
+);
+/*==============================================================*/
+/* Table: sls_level1_header                                     */
+/*==============================================================*/
+create table sls_level1_header
+(
+   id                   int(20) not null,
+   obs_time             datetime,
+   exp_time             float,
+   ra                   float,
+   "dec"                float,
+   create_time          datetime,
+   primary key (id)
+);
+/*==============================================================*/
+/* Table: sls_level2_spectra                                  */
+/*==============================================================*/
+create table sls_level2_spectra
+(
+   id                   integer PRIMARY KEY autoincrement,
+   spectra_id           varchar(40),
+   level1_id            int(20) not null,
+   region               varchar(128),
+   filename             varchar(128),
+   file_path            varchar(256),
+   prc_status           tinyint(1),
+   prc_time             datetime,
+   qc1_status           tinyint(1),
+   qc1_time             datetime,
+   create_time          datetime,
+   pipeline_id          varchar(60)
+);
 /*==============================================================*/
 /* Table: ifs_level1_data                                       */
 /*==============================================================*/
@@ -40,12 +97,6 @@ create table ifs_level1_data
    data_type            varchar(64) not null,
    cor_sci_id           int(20),
    prc_params           varchar(1024),
-   flat_id              int(20),
-   dark_id              int(20),
-   bias_id              int(20),
-   lamp_id              int(20),
-   arc_id               int(20),
-   sky_id               int(20),
    filename             varchar(128),
    file_path            varchar(256),
    prc_status           tinyint(1),
@@ -55,7 +106,15 @@ create table ifs_level1_data
    create_time          datetime,
    pipeline_id          varchar(60)
 );
-
+/*==============================================================*/
+/* Table: ifs_level1_ref                                       */
+/*==============================================================*/
+create table ifs_level1_ref (
+  level1_id int(20) not null,
+  ref_type varchar(64) not null,
+  cal_id int(20) not null,
+  primary key (level1_id, ref_type)
+);
 /*==============================================================*/
 /* Table: ifs_level1_header                                     */
 /*==============================================================*/
@@ -80,9 +139,6 @@ create table msc_level1_data
    data_type            varchar(64) not null,
    cor_sci_id           int(20),
    prc_params           varchar(1024),
-   flat_id              int(20),
-   dark_id              int(20),
-   bias_id              int(20),
    filename             varchar(128),
    file_path            varchar(256),
    prc_status           tinyint(1),
@@ -92,7 +148,15 @@ create table msc_level1_data
    create_time          datetime,
    pipeline_id          varchar(60)
 );
-
+/*==============================================================*/
+/* Table: msc_level1_ref                                       */
+/*==============================================================*/
+create table msc_level1_ref (
+  level1_id int(20) not null,
+  ref_type varchar(64) not null,
+  cal_id int(20) not null,
+  primary key (level1_id, ref_type)
+);
 /*==============================================================*/
 /* Table: msc_level1_header                                     */
 /*==============================================================*/
@@ -250,7 +314,20 @@ create table t_level0_prc
    prc_time             datetime,
    result_file_path            varchar(256)
 );
-
+/*==============================================================*/
+/* Table: t_level1_prc                                          */
+/*==============================================================*/
+create table t_level1_prc
+(
+   id                   integer PRIMARY KEY autoincrement,
+   level1_id            int(20) not null,
+   pipeline_id          varchar(64) not null,
+   prc_module           varchar(32) not null,
+   params_file_path     varchar(256),
+   prc_status           int(2),
+   prc_time             datetime,
+   result_file_path            varchar(256)
+);
 /*==============================================================*/
 /* Table: t_module_status                                       */
 /*==============================================================*/

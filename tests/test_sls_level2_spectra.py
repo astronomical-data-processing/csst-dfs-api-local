@@ -1,15 +1,15 @@
 import unittest
 
-from csst_dfs_api_local.ifs import Level1DataApi
+from csst_dfs_api_local.sls import Level2SpectraApi
 
-class IFSResult1TestCase(unittest.TestCase):
+class SLSLevel2SpectraTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.api = Level1DataApi()
+        self.api = Level2SpectraApi()
 
     def test_find(self):
         recs = self.api.find(
-                level0_id='0000223', 
+                level1_id=1, 
                 create_time = ("2021-06-01 11:12:13","2021-06-08 11:12:13")
             )
         print('find:', recs)
@@ -28,14 +28,12 @@ class IFSResult1TestCase(unittest.TestCase):
 
     def test_write(self):
         rec = self.api.write(
-            level0_id='0000223', 
-            data_type = "sci",
-            cor_sci_id = 2,
-            prc_params = "/opt/dddasd.params",
+            level1_id=2, 
+            spectra_id = "222",
+            region = "[12,13,24,24]",
             prc_status = 3,
             prc_time = '2021-06-05 11:12:13',
             filename = "dddasd223234.fits",
             file_path = "/opt/dddasd23.fits",
-            pipeline_id = "P2",
-            refs = {'dark': 1, 'bias': 2, 'flat': 3 })
+            pipeline_id = "P2")
         print('write:', rec)

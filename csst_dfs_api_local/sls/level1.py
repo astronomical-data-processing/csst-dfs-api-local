@@ -6,13 +6,13 @@ import shutil
 from ..common.db import DBClient
 from ..common.utils import *
 from csst_dfs_commons.models import Result
-from csst_dfs_commons.models.ifs import Level1Record
+from csst_dfs_commons.models.sls import Level1Record
 from csst_dfs_commons.models.common import from_dict_list
 
 log = logging.getLogger('csst')
 
 class Level1DataApi(object):
-    def __init__(self, sub_system = "ifs"):
+    def __init__(self, sub_system = "sls"):
         self.sub_system = sub_system
         self.root_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
         self.db = DBClient()
@@ -41,8 +41,8 @@ class Level1DataApi(object):
             filename = get_parameter(kwargs, "filename")
             limit = get_parameter(kwargs, "limit", 0)
 
-            sql_count = "select count(*) as c from ifs_level1_data where 1=1"
-            sql_data = f"select * from ifs_level1_data where 1=1"
+            sql_count = "select count(*) as c from sls_level1_data where 1=1"
+            sql_data = f"select * from sls_level1_data where 1=1"
 
             sql_condition = "" 
             if level0_id:
@@ -73,27 +73,24 @@ class Level1DataApi(object):
         except Exception as e:
             return Result.error(message=str(e))
         
-
     def get(self, **kwargs):
         '''
         parameter kwargs:
-            id = [int] 
-
-        return dict or None
+            id = [int]
+        return csst_dfs_common.models.Result
         '''
         try:
-            fits_id = get_parameter(kwargs, "id", -1)
+            id = get_parameter(kwargs, "id", -1)
             r = self.db.select_one(
-                "select * from ifs_level1_data where id=?", (fits_id,))
-
+                "select * from sls_level1_data where id=?", (id,))
             if r:
                 return Result.ok_data(data=Level1Record().from_dict(r))
             else:
-                return Result.error(message=f"id:{fits_id} not found")  
+                return Result.error(message=f"id:{id} not found")  
         except Exception as e:
             log.error(e)
-            return Result.error(message=str(e))        
-
+            return Result.error(message=str(e)) 
+            
     def update_proc_status(self, **kwargs):
         ''' update the status of reduction
 
@@ -107,14 +104,14 @@ class Level1DataApi(object):
         status = get_parameter(kwargs, "status")
         try:
             existed = self.db.exists(
-                "select * from ifs_level1_data where id=?",
+                "select * from sls_level1_data where id=?",
                 (fits_id,)
             )
             if not existed:
                 log.warning('%s not found' %(fits_id, ))
                 return Result.error(message ='%s not found' %(fits_id, ))
             self.db.execute(
-                'update ifs_level1_data set prc_status=?, prc_time=? where id=?',
+                'update sls_level1_data set prc_status=?, prc_time=? where id=?',
                 (status, format_time_ms(time.time()), fits_id)
             )  
             self.db.end() 
@@ -135,14 +132,14 @@ class Level1DataApi(object):
         status = get_parameter(kwargs, "status")
         try:
             existed = self.db.exists(
-                "select * from ifs_level1_data where id=?",
+                "select * from sls_level1_data where id=?",
                 (fits_id,)
             )
             if not existed:
                 log.warning('%s not found' %(fits_id, ))
                 return Result.error(message ='%s not found' %(fits_id, ))
             self.db.execute(
-                'update ifs_level1_data set qc1_status=?, qc1_time=? where id=?',
+                'update sls_level1_data set qc1_status=?, qc1_time=? where id=?',
                 (status, format_time_ms(time.time()), fits_id)
             )  
             self.db.end() 
@@ -158,15 +155,13 @@ class Level1DataApi(object):
         parameter kwargs:
             level0_id : [str]
             data_type : [str]
-            cor_sci_id : [int]
             prc_params : [str]
             filename : [str]
             file_path : [str]            
             prc_status : [int]
             prc_time : [str]
             pipeline_id : [str]
-            refs : [dict]
-
+            refs: [dict]
         return csst_dfs_common.models.Result
         '''   
         try:
@@ -174,7 +169,6 @@ class Level1DataApi(object):
                 id = 0,
                 level0_id = get_parameter(kwargs, "level0_id"),
                 data_type = get_parameter(kwargs, "data_type"),
-                cor_sci_id = get_parameter(kwargs, "cor_sci_id"),
                 prc_params = get_parameter(kwargs, "prc_params"),
                 filename = get_parameter(kwargs, "filename"),
                 file_path = get_parameter(kwargs, "file_path"),
@@ -184,29 +178,27 @@ class Level1DataApi(object):
                 refs = get_parameter(kwargs, "refs", {})
             )
             existed = self.db.exists(
-                    "select * from ifs_level1_data where filename=?",
+                    "select * from sls_level1_data where filename=?",
                     (rec.filename,)
                 )
             if existed:
                 log.error(f'{rec.filename} has already been existed')
                 return Result.error(message=f'{rec.filename} has already been existed') 
 
-            now_str = format_time_ms(time.time())
             self.db.execute(
-                'INSERT INTO ifs_level1_data (level0_id,data_type,cor_sci_id,prc_params,filename,file_path,qc1_status,prc_status,prc_time, create_time,pipeline_id) \
-                VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.filename, rec.file_path, -1, rec.prc_status,rec.prc_time, now_str, rec.pipeline_id,)
+                'INSERT INTO sls_level1_data (level0_id,data_type,prc_params,filename,file_path,qc1_status,prc_status,prc_time,create_time,pipeline_id) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?)',
+                (rec.level0_id, rec.data_type, rec.prc_params, rec.filename, rec.file_path, -1, rec.prc_status, rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
             )
             self.db.end()
             rec.id = self.db.last_row_id()
 
             if rec.refs.items():
-                sql_refs = "insert into ifs_level1_ref (level1_id,ref_type,cal_id) values "
+                sql_refs = "insert into sls_level1_ref (level1_id,ref_type,cal_id) values "
                 values = ["(%s,'%s',%s)"%(rec.id,k,v) for k,v in rec.refs.items()]
                 _ = self.db.execute(sql_refs + ",".join(values))      
-                self.db.end()
 
-            rec.create_time = now_str
+                self.db.end()
             return Result.ok_data(data=rec)
         except Exception as e:
             log.error(e)

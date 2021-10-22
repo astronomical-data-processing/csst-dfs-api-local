@@ -1,8 +1,8 @@
 import unittest
 
-from csst_dfs_api_local.ifs import Level1DataApi
+from csst_dfs_api_local.sls import Level1DataApi
 
-class IFSResult1TestCase(unittest.TestCase):
+class SLSResult1TestCase(unittest.TestCase):
 
     def setUp(self):
         self.api = Level1DataApi()
@@ -30,7 +30,6 @@ class IFSResult1TestCase(unittest.TestCase):
         rec = self.api.write(
             level0_id='0000223', 
             data_type = "sci",
-            cor_sci_id = 2,
             prc_params = "/opt/dddasd.params",
             prc_status = 3,
             prc_time = '2021-06-05 11:12:13',

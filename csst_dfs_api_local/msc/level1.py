@@ -23,7 +23,6 @@ class Level1DataApi(object):
         parameter kwargs:
             level0_id: [str]
             data_type: [str]
-            obs_type: [str]
             create_time : (start, end),
             qc1_status : [int],
             prc_status : [int],
@@ -74,28 +73,6 @@ class Level1DataApi(object):
         except Exception as e:
             return Result.error(message=str(e))
         
-
-    def get(self, **kwargs):
-        '''
-        parameter kwargs:
-            id = [int],
-            level0_id = [str]
-
-        return dict or None
-        '''
-        try:
-            fits_id = get_parameter(kwargs, "id", -1)
-            r = self.db.select_one(
-                "select * from msc_level1_data where id=?", (fits_id,))
-
-            if r:
-                return Result.ok_data(data=Level1Record().from_dict(r))
-            else:
-                return Result.error(message=f"id:{fits_id} not found")  
-        except Exception as e:
-            log.error(e)
-            return Result.error(message=str(e))        
-
     def get(self, **kwargs):
         '''
         parameter kwargs:
@@ -180,18 +157,13 @@ class Level1DataApi(object):
             data_type : [str]
             cor_sci_id : [int]
             prc_params : [str]
-            flat_id : [int]
-            dark_id : [int]
-            bias_id : [int]
-            lamp_id : [int]
-            arc_id : [int]
-            sky_id : [int]            
             filename : [str]
             file_path : [str]            
             prc_status : [int]
             prc_time : [str]
             pipeline_id : [str]
-
+            refs: [dict]
+            
         return csst_dfs_common.models.Result
         '''   
         try:
@@ -201,14 +173,12 @@ class Level1DataApi(object):
                 data_type = get_parameter(kwargs, "data_type"),
                 cor_sci_id = get_parameter(kwargs, "cor_sci_id"),
                 prc_params = get_parameter(kwargs, "prc_params"),
-                flat_id = get_parameter(kwargs, "flat_id"),
-                dark_id = get_parameter(kwargs, "dark_id"),
-                bias_id = get_parameter(kwargs, "bias_id"),
                 filename = get_parameter(kwargs, "filename"),
                 file_path = get_parameter(kwargs, "file_path"),
                 prc_status = get_parameter(kwargs, "prc_status", -1),
                 prc_time = get_parameter(kwargs, "prc_time", format_datetime(datetime.now())),
-                pipeline_id = get_parameter(kwargs, "pipeline_id")
+                pipeline_id = get_parameter(kwargs, "pipeline_id"),
+                refs = get_parameter(kwargs, "refs", {})
             )
             existed = self.db.exists(
                     "select * from msc_level1_data where filename=?",
@@ -219,13 +189,19 @@ class Level1DataApi(object):
                 return Result.error(message=f'{rec.filename} has already been existed') 
 
             self.db.execute(
-                'INSERT INTO msc_level1_data (level0_id,data_type,cor_sci_id,prc_params,flat_id,dark_id,bias_id,filename,file_path,qc1_status,prc_status,prc_time,create_time,pipeline_id) \
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.flat_id, rec.dark_id, rec.bias_id, rec.filename, rec.file_path, -1, rec.prc_status, rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
+                'INSERT INTO msc_level1_data (level0_id,data_type,cor_sci_id,prc_params,filename,file_path,qc1_status,prc_status,prc_time,create_time,pipeline_id) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                (rec.level0_id, rec.data_type, rec.cor_sci_id, rec.prc_params, rec.filename, rec.file_path, -1, rec.prc_status, rec.prc_time, format_time_ms(time.time()),rec.pipeline_id,)
             )
             self.db.end()
             rec.id = self.db.last_row_id()
 
+            if rec.refs.items():
+                sql_refs = "insert into msc_level1_ref (level1_id,ref_type,cal_id) values "
+                values = ["(%s,'%s',%s)"%(rec.id,k,v) for k,v in rec.refs.items()]
+                _ = self.db.execute(sql_refs + ",".join(values))      
+
+                self.db.end()
             return Result.ok_data(data=rec)
         except Exception as e:
             log.error(e)
