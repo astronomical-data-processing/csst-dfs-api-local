@@ -6,14 +6,15 @@ import shutil
 from ..common.db import DBClient
 from ..common.utils import *
 from csst_dfs_commons.models import Result
-from csst_dfs_commons.models.facility import CalMergeRecord
+from csst_dfs_commons.models.ifs import CalMergeRecord
 from csst_dfs_commons.models.common import from_dict_list
 from .level0 import Level0DataApi
 
 log = logging.getLogger('csst')
 
 class CalMergeApi(object):
-    def __init__(self):
+    def __init__(self, sub_system = "ifs"):
+        self.sub_system = sub_system
         self.root_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
         self.db = DBClient()
         self.level0Api = Level0DataApi()
@@ -35,14 +36,14 @@ class CalMergeApi(object):
             if level0_data is None:
                 return Result.error(message = "level0 data [%s]not found"%(level0_id))
             
-            sql_data = f"select * from t_cal_merge where detector_no='{level0_data.data.detector_no}' and ref_type='{ref_type}' and obs_time >= '{level0_data.data.obs_time}' order by obs_time ASC limit 1"
+            sql_data = f"select * from ifs_cal_merge where detector_no='{level0_data.data.detector_no}' and ref_type='{ref_type}' and obs_time >= '{level0_data.data.obs_time}' order by obs_time ASC limit 1"
 
             r = self.db.select_one(sql_data)
             if r:
                 rec = CalMergeRecord().from_dict(r)
                 return Result.ok_data(data=rec)
             
-            sql_data = f"select * from t_cal_merge where detector_no='{level0_data.data.detector_no}' and ref_type='{ref_type}' and obs_time <= '{level0_data.data.obs_time}' order by obs_time DESC limit 1"
+            sql_data = f"select * from ifs_cal_merge where detector_no='{level0_data.data.detector_no}' and ref_type='{ref_type}' and obs_time <= '{level0_data.data.obs_time}' order by obs_time DESC limit 1"
 
             r = self.db.select_one(sql_data)
             if r:
@@ -78,8 +79,8 @@ class CalMergeApi(object):
             file_name = get_parameter(kwargs, "file_name")
             limit = get_parameter(kwargs, "limit", 0)
 
-            sql_count = "select count(*) as c from t_cal_merge where 1=1"
-            sql_data = f"select * from t_cal_merge where 1=1"
+            sql_count = "select count(*) as c from ifs_cal_merge where 1=1"
+            sql_data = f"select * from ifs_cal_merge where 1=1"
 
             sql_condition = "" 
             if detector_no:
@@ -135,13 +136,13 @@ class CalMergeApi(object):
         if cal_id != "": 
             return self.get_by_cal_id(cal_id)
 
-    def get_by_id(self, id: str):
+    def get_by_id(self, iid: int):
         try:
             r = self.db.select_one(
-                "select * from t_cal_merge where id=?", (id,))
+                "select * from ifs_cal_merge where id=?", (iid,))
             if r:
 
-                sql_get_level0_id = f"select level0_id from t_cal2level0 where merge_id={r['id']}" 
+                sql_get_level0_id = f"select level0_id from ifs_cal2level0 where merge_id={r['id']}" 
                 _, records = self.db.select_many(sql_get_level0_id)
                 level0_ids = [r["level0_id"] for r in records]
 
@@ -149,7 +150,7 @@ class CalMergeApi(object):
                 rec.level0_ids = level0_ids
                 return Result.ok_data(data=rec)
             else:
-                return Result.error(message=f"id:{id} not found")
+                return Result.error(message=f"id:{iid} not found")
                     
         except Exception as e:
             log.error(e)
@@ -158,10 +159,10 @@ class CalMergeApi(object):
     def get_by_cal_id(self, cal_id: str):
         try:
             r = self.db.select_one(
-                "select * from t_cal_merge where cal_id=?", (cal_id,))
+                "select * from ifs_cal_merge where cal_id=?", (cal_id,))
             if r:
 
-                sql_get_level0_id = f"select level0_id from t_cal2level0 where merge_id={r['id']}" 
+                sql_get_level0_id = f"select level0_id from ifs_cal2level0 where merge_id={r['id']}" 
                 _, records = self.db.select_many(sql_get_level0_id)
                 level0_ids = [r["level0_id"] for r in records]
 
@@ -197,7 +198,7 @@ class CalMergeApi(object):
 
         try:
             self.db.execute(
-                'update t_cal_merge set qc1_status=?, qc1_time=? where id=?',
+                'update ifs_cal_merge set qc1_status=?, qc1_time=? where id=?',
                 (status, format_time_ms(time.time()), id)
             )  
             self.db.end() 
@@ -229,14 +230,14 @@ class CalMergeApi(object):
 
         try:
             existed = self.db.exists(
-                "select * from t_cal_merge where id=?",
+                "select * from ifs_cal_merge where id=?",
                 (id,)
             )
             if not existed:
                 log.warning('%s not found' %(id, ))
                 return Result.error(message ='%s not found' %(id, ))
             self.db.execute(
-                'update t_cal_merge set prc_status=?, prc_time=? where id=?',
+                'update ifs_cal_merge set prc_status=?, prc_time=? where id=?',
                 (status, format_time_ms(time.time()), id)
             )
             self.db.end() 
@@ -278,14 +279,14 @@ class CalMergeApi(object):
         )
         try:
             self.db.execute(
-                'INSERT INTO t_cal_merge (cal_id,detector_no,ref_type,obs_time,exp_time,filename,file_path,prc_status,prc_time,create_time) \
+                'INSERT INTO ifs_cal_merge (cal_id,detector_no,ref_type,obs_time,exp_time,filename,file_path,prc_status,prc_time,create_time) \
                     VALUES(?,?,?,?,?,?,?,?,?,?)',
                 (rec.cal_id, rec.detector_no, rec.ref_type, rec.obs_time, rec.exp_time, rec.filename, rec.file_path,rec.prc_status,rec.prc_time,format_time_ms(time.time()))
             )
             self.db.end()
             rec.id = self.db.last_row_id()
 
-            sql_level0_ids = "insert into t_cal2level0 (merge_id,level0_id) values "
+            sql_level0_ids = "insert into ifs_cal2level0 (merge_id,level0_id) values "
             values = ["(%s,%s)"%(rec.id,i) for i in rec.level0_ids]
             _ = self.db.execute(sql_level0_ids + ",".join(values))            
 

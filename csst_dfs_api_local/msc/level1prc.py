@@ -6,21 +6,22 @@ import shutil
 from ..common.db import DBClient
 from ..common.utils import *
 from csst_dfs_commons.models import Result
-from csst_dfs_commons.models.facility import Level0PrcRecord
+from csst_dfs_commons.models.msc import Level1PrcRecord
 from csst_dfs_commons.models.common import from_dict_list
 
 log = logging.getLogger('csst')
 
-class Level0PrcApi(object):
-    def __init__(self):
+class Level1PrcApi(object):
+    def __init__(self, sub_system = "msc"):
+        self.sub_system = sub_system
         self.root_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
         self.db = DBClient()
 
     def find(self, **kwargs):
-        ''' retrieve level0 procedure records from database
+        ''' retrieve level1 procedure records from database
 
         parameter kwargs:
-            level0_id: [str]
+            level1_id: [int]
             pipeline_id: [str]
             prc_module: [str]
             prc_status : [int]
@@ -28,14 +29,14 @@ class Level0PrcApi(object):
         return: csst_dfs_common.models.Result
         '''
         try:
-            level0_id = get_parameter(kwargs, "level0_id")
+            level1_id = get_parameter(kwargs, "level1_id", 0)
             pipeline_id = get_parameter(kwargs, "pipeline_id")
             prc_module = get_parameter(kwargs, "prc_module")
             prc_status = get_parameter(kwargs, "prc_status")
 
-            sql_data = f"select * from t_level0_prc"
+            sql_data = f"select * from msc_level1_prc"
 
-            sql_condition = f"where level0_id='{level0_id}'"
+            sql_condition = f"where level1_id={level1_id}"
             if pipeline_id:
                 sql_condition = sql_condition + " and pipeline_id='" + pipeline_id + "'"
             if prc_module:
@@ -46,7 +47,7 @@ class Level0PrcApi(object):
             sql_data = f"{sql_data} {sql_condition}"
 
             _, records = self.db.select_many(sql_data)
-            return Result.ok_data(data=from_dict_list(Level0PrcRecord, records)).append("totalCount", len(records))
+            return Result.ok_data(data=from_dict_list(Level1PrcRecord, records)).append("totalCount", len(records))
 
         except Exception as e:
             return Result.error(message=str(e))
@@ -65,14 +66,14 @@ class Level0PrcApi(object):
 
         try:
             existed = self.db.exists(
-                "select * from t_level0_prc where id=?",
+                "select * from msc_level1_prc where id=?",
                 (id,)
             )
             if not existed:
                 log.warning('%s not found' %(id, ))
                 return Result.error(message ='%s not found' %(id, ))
             self.db.execute(
-                'update t_level0_prc set prc_status=?, prc_time=? where id=?',
+                'update msc_level1_prc set prc_status=?, prc_time=? where id=?',
                 (status, format_time_ms(time.time()), id)
             )  
             self.db.end() 
@@ -83,10 +84,10 @@ class Level0PrcApi(object):
             return Result.error(message=str(e))
 
     def write(self, **kwargs):
-        ''' insert a level0 procedure record into database
+        ''' insert a level1 procedure record into database
  
         parameter kwargs:
-            level0_id : [str]
+            level1_id : [int]
             pipeline_id : [str]
             prc_module : [str]
             params_file_path : [str]
@@ -96,9 +97,9 @@ class Level0PrcApi(object):
         return csst_dfs_common.models.Result
         '''   
 
-        rec = Level0PrcRecord(
+        rec = Level1PrcRecord(
             id = 0,
-            level0_id = get_parameter(kwargs, "level0_id"),
+            level1_id = get_parameter(kwargs, "level1_id", 0),
             pipeline_id = get_parameter(kwargs, "pipeline_id"),
             prc_module = get_parameter(kwargs, "prc_module"),
             params_file_path = get_parameter(kwargs, "params_file_path"),
@@ -108,9 +109,9 @@ class Level0PrcApi(object):
         )
         try:
             self.db.execute(
-                'INSERT INTO t_level0_prc (level0_id,pipeline_id,prc_module, params_file_path, prc_status,prc_time,result_file_path) \
+                'INSERT INTO msc_level1_prc (level1_id,pipeline_id,prc_module, params_file_path, prc_status,prc_time,result_file_path) \
                     VALUES(?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.pipeline_id, rec.prc_module, rec.params_file_path, rec.prc_status, rec.prc_time, rec.result_file_path)
+                (rec.level1_id, rec.pipeline_id, rec.prc_module, rec.params_file_path, rec.prc_status, rec.prc_time, rec.result_file_path)
             )
             self.db.end()
             rec.id = self.db.last_row_id()

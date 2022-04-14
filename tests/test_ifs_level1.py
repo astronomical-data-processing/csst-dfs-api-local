@@ -2,7 +2,7 @@ import unittest
 
 from csst_dfs_api_local.ifs import Level1DataApi
 
-class IFSResult1TestCase(unittest.TestCase):
+class IFSLevel1DataApiTestCase(unittest.TestCase):
 
     def setUp(self):
         self.api = Level1DataApi()

@@ -1,14 +1,14 @@
 import unittest
 
-from csst_dfs_api_local.facility import Level0DataApi
+from csst_dfs_api_local.sls import Level0DataApi
 
-class Level0DataApiTestCase(unittest.TestCase):
+class SLSLevel0DataApiTestCase(unittest.TestCase):
 
     def setUp(self):
         self.api = Level0DataApi()
 
     def test_find(self):
-        recs = self.api.find(obs_id = '13', obs_type = 'sci', limit = 0)
+        recs = self.api.find(obs_id = '300000055', obs_type = 'sky', limit = 0)
         print('find:', recs)
 
     def test_get(self):
@@ -27,7 +27,7 @@ class Level0DataApiTestCase(unittest.TestCase):
         rec = self.api.write(
             obs_id = '0000013',
             detector_no = "01",
-            obs_type = "sci",            
+            obs_type = "sky",            
             obs_time = "2021-06-06 11:12:13",
             exp_time = 150,
             detector_status_id = 3,

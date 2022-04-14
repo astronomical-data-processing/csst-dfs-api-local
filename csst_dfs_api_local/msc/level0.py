@@ -6,13 +6,14 @@ import shutil
 from ..common.db import DBClient
 from ..common.utils import *
 from csst_dfs_commons.models import Result
-from csst_dfs_commons.models.facility import Level0Record
+from csst_dfs_commons.models.msc import Level0Record
 from csst_dfs_commons.models.common import from_dict_list
 
 log = logging.getLogger('csst')
 
 class Level0DataApi(object):
-    def __init__(self):
+    def __init__(self, sub_system = "msc"):
+        self.sub_system = sub_system
         self.root_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
         self.db = DBClient()
 
@@ -42,8 +43,8 @@ class Level0DataApi(object):
             file_name = get_parameter(kwargs, "file_name")
             limit = get_parameter(kwargs, "limit", 0)
 
-            sql_count = "select count(*) as c from t_level0_data where 1=1"
-            sql_data = f"select * from t_level0_data where 1=1"
+            sql_count = "select count(*) as c from msc_level0_data where 1=1"
+            sql_data = f"select * from msc_level0_data where 1=1"
 
             sql_condition = "" 
             if obs_id:
@@ -100,7 +101,7 @@ class Level0DataApi(object):
     def get_by_id(self, id: int):
         try:
             r = self.db.select_one(
-                "select * from t_level0_data where id=?", (id,))
+                "select * from msc_level0_data where id=?", (id,))
             if r:
                 return Result.ok_data(data=Level0Record().from_dict(r))
             else:
@@ -112,7 +113,7 @@ class Level0DataApi(object):
     def get_by_level0_id(self, level0_id: str):
         try:
             r = self.db.select_one(
-                "select * from t_level0_data where level0_id=?", (level0_id,))
+                "select * from msc_level0_data where level0_id=?", (level0_id,))
             if r:
                 return Result.ok_data(data=Level0Record().from_dict(r))
             else:
@@ -142,7 +143,7 @@ class Level0DataApi(object):
         status = get_parameter(kwargs, "status")
         try:
             self.db.execute(
-                'update t_level0_data set prc_status=?, prc_time=? where id=?',
+                'update msc_level0_data set prc_status=?, prc_time=? where id=?',
                 (status, format_time_ms(time.time()), id)
             )  
             self.db.end() 
@@ -171,7 +172,7 @@ class Level0DataApi(object):
         status = get_parameter(kwargs, "status")
         try:
             self.db.execute(
-                'update t_level0_data set qc0_status=?, qc0_time=? where id=?',
+                'update msc_level0_data set qc0_status=?, qc0_time=? where id=?',
                 (status, format_time_ms(time.time()), id)
             )  
             self.db.end() 
@@ -208,7 +209,7 @@ class Level0DataApi(object):
         rec.level0_id = f"{rec.obs_id}{rec.detector_no}"
         try:
             existed = self.db.exists(
-                    "select * from t_level0_data where filename=?",
+                    "select * from msc_level0_data where filename=?",
                     (rec.filename,)
                 )
             if existed:
@@ -216,7 +217,7 @@ class Level0DataApi(object):
                 return Result.error(message ='%s existed' %(rec.filename, ))
 
             self.db.execute(
-                'INSERT INTO t_level0_data (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
+                'INSERT INTO msc_level0_data (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
                 (rec.level0_id, rec.obs_id, rec.detector_no, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
             )

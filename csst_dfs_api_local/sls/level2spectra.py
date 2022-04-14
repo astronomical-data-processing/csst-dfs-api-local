@@ -12,7 +12,7 @@ from csst_dfs_commons.models.common import from_dict_list
 log = logging.getLogger('csst')
 
 class Level2SpectraApi(object):
-    def __init__(self, sub_system = "msc"):
+    def __init__(self, sub_system = "sls"):
         self.sub_system = sub_system
         self.root_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
         self.db = DBClient()

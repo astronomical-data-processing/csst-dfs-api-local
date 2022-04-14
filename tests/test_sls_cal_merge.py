@@ -2,9 +2,9 @@ import os
 import unittest
 from astropy.io import fits
 
-from csst_dfs_api_local.facility.calmerge import CalMergeApi
+from csst_dfs_api_local.sls.calmerge import CalMergeApi
 
-class CalMergeApiTestCase(unittest.TestCase):
+class SLSCalMergeApiTestCase(unittest.TestCase):
 
     def setUp(self):
         self.api = CalMergeApi()
@@ -24,11 +24,11 @@ class CalMergeApiTestCase(unittest.TestCase):
         print('get:', rec)
 
     def test_update_proc_status(self):
-        rec = self.api.update_proc_status(id = 1, status = 1)
+        rec = self.api.update_proc_status(id = 100, status = 1)
         print('update_proc_status:', rec)
 
     def test_update_qc1_status(self):
-        rec = self.api.update_qc1_status(id = 1, status = 2)
+        rec = self.api.update_qc1_status(id = 100, status = 2)
         print('update_qc1_status:', rec)    
 
     def test_write(self):
