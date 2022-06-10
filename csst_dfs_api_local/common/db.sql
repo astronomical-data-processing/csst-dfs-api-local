@@ -52,7 +52,27 @@ drop table if exists ifs_level1_header;
 drop table if exists ifs_level1_prc;
 
 drop table if exists ifs_level1_ref;
+/*----------------mci------------------------------*/
 
+drop table if exists mci_level0_data;
+
+drop table if exists mci_level0_header;
+
+drop table if exists mci_level0_prc;
+
+drop table if exists mci_cal2level0;
+
+drop table if exists mci_cal_header;
+
+drop table if exists mci_cal_merge;
+
+drop table if exists mci_level1_data;
+
+drop table if exists mci_level1_header;
+
+drop table if exists mci_level1_prc;
+
+drop table if exists mci_level1_ref;
 /*----------------sls------------------------------*/
 drop table if exists sls_level0_data;
 
@@ -385,6 +405,128 @@ create table ifs_level1_header
    primary key (id)
 );
 create table ifs_level1_prc
+(
+   id                   integer PRIMARY KEY autoincrement,
+   level1_id            int(20) not null,
+   pipeline_id          varchar(64) not null,
+   prc_module           varchar(32) not null,
+   params_file_path     varchar(256),
+   prc_status           int(2),
+   prc_time             datetime,
+   result_file_path            varchar(256)
+);
+/*===========================mci===================================*/
+create table mci_level0_data
+(
+   id                   integer PRIMARY KEY autoincrement,
+   level0_id            varchar(20) not null,
+   obs_id               varchar(10) not null,
+   detector_no          varchar(10) not null,
+   obs_type             varchar(16),
+   obs_time             datetime,
+   exp_time             float,
+   detector_status_id   int(20),
+   filename             varchar(128),
+   file_path            varchar(256),
+   qc0_status           tinyint(1),
+   qc0_time             datetime,
+   prc_status           tinyint(1),
+   prc_time             datetime,
+   create_time          datetime
+);
+
+create table mci_level0_header
+(
+   id                   int(20) not null,
+   obs_time             datetime,
+   exp_time             float,
+   ra                   float,
+   "dec"                float,
+   create_time          datetime,
+   primary key (id)
+);
+
+create table mci_level0_prc
+(
+   id                   integer PRIMARY KEY autoincrement,
+   level0_id            varchar(20) not null,
+   pipeline_id          varchar(64) not null,
+   prc_module           varchar(32) not null,
+   params_file_path     varchar(256),
+   prc_status           int(2),
+   prc_time             datetime,
+   result_file_path            varchar(256)
+);
+create table mci_cal2level0
+(
+   merge_id             int(20) not null,
+   level0_id            varchar(20) not null,
+   primary key (merge_id, level0_id)
+);
+
+create table mci_cal_header
+(
+   id                   int(20) not null,
+   obs_time             datetime,
+   exp_time             float,
+   ra                   float,
+   "dec"                float,
+   create_time          datetime,
+   primary key (id)
+);
+
+create table mci_cal_merge
+(
+   id                   integer PRIMARY KEY autoincrement,
+   cal_id               varchar(20) not null,
+   detector_no          varchar(10) not null,
+   ref_type             varchar(16),
+   obs_time             datetime,
+   exp_time             float,
+   filename             varchar(128),
+   file_path            varchar(256),
+   qc1_status           tinyint(1),
+   qc1_time             datetime,
+   prc_status           tinyint(1),
+   prc_time             datetime,
+   create_time          datetime
+);
+
+create table mci_level1_data
+(
+   id                   integer PRIMARY KEY autoincrement,
+   level0_id            varchar(20) not null,
+   data_type            varchar(64) not null,
+   cor_sci_id           int(20),
+   prc_params           varchar(1024),
+   filename             varchar(128),
+   file_path            varchar(256),
+   prc_status           tinyint(1),
+   prc_time             datetime,
+   qc1_status           tinyint(1),
+   qc1_time             datetime,
+   create_time          datetime,
+   pipeline_id          varchar(60)
+);
+
+create table mci_level1_ref (
+  level1_id int(20) not null,
+  ref_type varchar(64) not null,
+  cal_id int(20) not null,
+  primary key (level1_id, ref_type)
+);
+
+create table mci_level1_header
+(
+   id                   int(20) not null,
+   obs_time             datetime,
+   exp_time             float,
+   ra                   float,
+   "dec"                float,
+   create_time          datetime,
+   primary key (id)
+);
+create table mci_level1_prc
 (
    id                   integer PRIMARY KEY autoincrement,
    level1_id            int(20) not null,
