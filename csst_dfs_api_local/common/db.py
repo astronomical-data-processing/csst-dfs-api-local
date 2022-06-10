@@ -11,7 +11,10 @@ log = logging.getLogger('csst')
 @singleton
 class DBClient(object):
     def __init__(self):
-        db_path = os.path.join(os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst"), "csst.sqlite")
+        db_path_dir = os.getenv("CSST_LOCAL_FILE_ROOT", "/opt/temp/csst")
+        if not os.path.exists(db_path_dir):
+            os.makedirs(db_path_dir)
+        db_path = os.path.join(db_path_dir, "csst.sqlite")
 
         self.inited = os.path.exists(db_path)
         self.pool = PersistentDB(sqlite3, maxusage=2, database=db_path)
