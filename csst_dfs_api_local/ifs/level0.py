@@ -21,13 +21,14 @@ class Level0DataApi(object):
         ''' retrieve level0 records from database
 
         parameter kwargs:
-            obs_id: [str]
-            detector_no: [str]
-            obs_type: [str]
+            obs_id: [str],
+            detector_no: [str],
+            obs_type: [str],
+            object_name: [str],
             obs_time : (start, end),
             qc0_status : [int],
             prc_status : [int],
-            file_name: [str]
+            file_name: [str],
             limit: limits returns the number of records,default 0:no-limit
 
         return: csst_dfs_common.models.Result
@@ -36,6 +37,7 @@ class Level0DataApi(object):
             obs_id = get_parameter(kwargs, "obs_id")
             detector_no = get_parameter(kwargs, "detector_no")
             obs_type = get_parameter(kwargs, "obs_type")
+            object_name = get_parameter(kwargs, "object_name")
             exp_time_start = get_parameter(kwargs, "obs_time", [None, None])[0]
             exp_time_end = get_parameter(kwargs, "obs_time", [None, None])[1]
             qc0_status = get_parameter(kwargs, "qc0_status")
@@ -53,6 +55,8 @@ class Level0DataApi(object):
                 sql_condition = f"{sql_condition} and detector_no='{detector_no}'"
             if obs_type:
                 sql_condition = f"{sql_condition} and obs_type='{obs_type}'"
+            if object_name:
+                sql_condition = f"{sql_condition} and object_name='{object_name}'"                
             if exp_time_start:
                 sql_condition = f"{sql_condition} and obs_time >='{exp_time_start}'"
             if exp_time_end:
@@ -200,6 +204,7 @@ class Level0DataApi(object):
             obs_id = get_parameter(kwargs, "obs_id"),
             detector_no = get_parameter(kwargs, "detector_no"),
             obs_type = get_parameter(kwargs, "obs_type"),
+            object_name = get_parameter(kwargs, "object_name"),
             obs_time = get_parameter(kwargs, "obs_time"),
             exp_time = get_parameter(kwargs, "exp_time"),
             detector_status_id = get_parameter(kwargs, "detector_status_id"),
@@ -217,9 +222,9 @@ class Level0DataApi(object):
                 return Result.error(message ='%s existed' %(rec.filename, ))
 
             self.db.execute(
-                'INSERT INTO ifs_level0_data (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.obs_id, rec.detector_no, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
+                'INSERT INTO ifs_level0_data (level0_id, obs_id, detector_no, object_name, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                (rec.level0_id, rec.obs_id, rec.detector_no, rec.object_name, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
             )
             self.db.end()
             rec.id = self.db.last_row_id()

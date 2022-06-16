@@ -51,6 +51,7 @@ def ingest_one(file_path, db, copyfiles):
     
     module_id = header["INSTRUME"]
     obs_type = header["OBSTYPE"]
+    object_name = header["OBJECT"]
     qc0_status = -1
     prc_status = -1
     time_now = datetime.datetime.now()
@@ -92,9 +93,9 @@ def ingest_one(file_path, db, copyfiles):
     level0_id = f"{obs_id}{detector}"  
 
     c = db.execute("insert into ifs_level0_data \
-        (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
-        values (?,?,?,?,?,?,?,?,?,?,?,?)",
-        (level0_id, obs_id, detector, obs_type, exp_start_time, exp_time, detector_status_id, filename, file_full_path, qc0_status, prc_status,create_time))
+        (level0_id, obs_id, detector_no, object_name, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
+        values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (level0_id, obs_id, detector, object_name, obs_type, exp_start_time, exp_time, detector_status_id, filename, file_full_path, qc0_status, prc_status,create_time))
     db.end()
     level0_id_id = db.last_row_id()
     #level0-header

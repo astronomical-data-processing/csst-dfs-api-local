@@ -300,6 +300,7 @@ create table ifs_level0_data
    level0_id            varchar(20) not null,
    obs_id               varchar(10) not null,
    detector_no          varchar(10) not null,
+   object_name          varchar(64) not null,
    obs_type             varchar(16),
    obs_time             datetime,
    exp_time             float,
