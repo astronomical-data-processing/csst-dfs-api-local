@@ -38,35 +38,46 @@ class Level0DataApi(object):
             detector_no = get_parameter(kwargs, "detector_no")
             obs_type = get_parameter(kwargs, "obs_type")
             object_name = get_parameter(kwargs, "object_name")
+            version = get_parameter(kwargs, "version")
             exp_time_start = get_parameter(kwargs, "obs_time", [None, None])[0]
             exp_time_end = get_parameter(kwargs, "obs_time", [None, None])[1]
             qc0_status = get_parameter(kwargs, "qc0_status")
             prc_status = get_parameter(kwargs, "prc_status")
             file_name = get_parameter(kwargs, "file_name")
             limit = get_parameter(kwargs, "limit", 0)
+            ra = get_parameter(kwargs, "ra", None)
+            dec = get_parameter(kwargs, "limit", None)
+            radius = get_parameter(kwargs, "limit", 0)
 
-            sql_count = "select count(*) as c from ifs_level0_data where 1=1"
-            sql_data = f"select * from ifs_level0_data where 1=1"
+            sql_count = 'select count(*) as c from ifs_level0_data d left join ifs_level0_header h on d.id=h.id where 1=1'
+            sql_data = 'select d.* from ifs_level0_data d left join ifs_level0_header h on d.id=h.id where 1=1'
 
             sql_condition = "" 
             if obs_id:
-                sql_condition = f"{sql_condition} and obs_id='{obs_id}'"              
+                sql_condition = f"{sql_condition} and d.obs_id='{obs_id}'"              
             if detector_no:
-                sql_condition = f"{sql_condition} and detector_no='{detector_no}'"
+                sql_condition = f"{sql_condition} and d.detector_no='{detector_no}'"
             if obs_type:
-                sql_condition = f"{sql_condition} and obs_type='{obs_type}'"
-            if object_name:
-                sql_condition = f"{sql_condition} and object_name='{object_name}'"                
+                sql_condition = f"{sql_condition} and d.obs_type='{obs_type}'"
             if exp_time_start:
-                sql_condition = f"{sql_condition} and obs_time >='{exp_time_start}'"
+                sql_condition = f"{sql_condition} and d.obs_time >='{exp_time_start}'"
             if exp_time_end:
-                sql_condition = f"{sql_condition} and obs_time <='{exp_time_end}'"
+                sql_condition = f"{sql_condition} and d.obs_time <='{exp_time_end}'"
             if qc0_status:
-                sql_condition = f"{sql_condition} and qc0_status={qc0_status}"
+                sql_condition = f"{sql_condition} and d.qc0_status={qc0_status}"
             if prc_status:
-                sql_condition = f"{sql_condition} and prc_status={prc_status}"   
+                sql_condition = f"{sql_condition} and d.prc_status={prc_status}"  
+            if object_name:
+                sql_condition = f"{sql_condition} and h.object_name='{object_name}'"
+            if version:
+                sql_condition = f"{sql_condition} and h.version='{version}'"  
+            if ra:
+                sql_condition = f"{sql_condition} and (h.ra <= {ra+radius} and h.ra >={ra-radius})"  
+            if dec:
+                sql_condition = f"{sql_condition} and (h.dec <= {dec+radius} and h.ra >={dec-radius})"
+
             if file_name:
-                sql_condition = f" and filename='{file_name}'"  
+                sql_condition = f" and d.filename='{file_name}'"  
 
             sql_count = f"{sql_count} {sql_condition}"
             sql_data = f"{sql_data} {sql_condition}"
@@ -204,7 +215,6 @@ class Level0DataApi(object):
             obs_id = get_parameter(kwargs, "obs_id"),
             detector_no = get_parameter(kwargs, "detector_no"),
             obs_type = get_parameter(kwargs, "obs_type"),
-            object_name = get_parameter(kwargs, "object_name"),
             obs_time = get_parameter(kwargs, "obs_time"),
             exp_time = get_parameter(kwargs, "exp_time"),
             detector_status_id = get_parameter(kwargs, "detector_status_id"),
@@ -222,9 +232,9 @@ class Level0DataApi(object):
                 return Result.error(message ='%s existed' %(rec.filename, ))
 
             self.db.execute(
-                'INSERT INTO ifs_level0_data (level0_id, obs_id, detector_no, object_name, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
+                'INSERT INTO ifs_level0_data (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.obs_id, rec.detector_no, rec.object_name, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
+                (rec.level0_id, rec.obs_id, rec.detector_no, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
             )
             self.db.end()
             rec.id = self.db.last_row_id()

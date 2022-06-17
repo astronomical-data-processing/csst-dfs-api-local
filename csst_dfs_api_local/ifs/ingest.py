@@ -6,6 +6,8 @@ import datetime
 import shutil
 
 from csst_dfs_api_local.common.db import DBClient
+from csst_dfs_commons.utils.fits import get_header_value
+
 log = logging.getLogger('csst-dfs-api-local')
 
 def ingest():
@@ -68,8 +70,9 @@ def ingest_one(file_path, db, copyfiles):
         (obs_id,exp_start_time,exp_time,module_id,obs_type,facility_status_id,module_status_id,qc0_status, prc_status,create_time))
         db.end()
     #level0
-    detector = header1["DETNAM"]
+    detector = get_header_value("DETNAM", header1, "-")
     filename = header["FILENAME"]
+    version = get_header_value("IMG_VER", header, "-")
     
     existed = db.exists(
             "select * from ifs_level0_data where filename=?",
@@ -93,9 +96,9 @@ def ingest_one(file_path, db, copyfiles):
     level0_id = f"{obs_id}{detector}"  
 
     c = db.execute("insert into ifs_level0_data \
-        (level0_id, obs_id, detector_no, object_name, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
-        values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (level0_id, obs_id, detector, object_name, obs_type, exp_start_time, exp_time, detector_status_id, filename, file_full_path, qc0_status, prc_status,create_time))
+        (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
+        values (?,?,?,?,?,?,?,?,?,?,?,?)",
+        (level0_id, obs_id, detector, obs_type, exp_start_time, exp_time, detector_status_id, filename, file_full_path, qc0_status, prc_status,create_time))
     db.end()
     level0_id_id = db.last_row_id()
     #level0-header
@@ -103,9 +106,9 @@ def ingest_one(file_path, db, copyfiles):
     dec_obj = header["OBJ_DEC"]
     db.execute("delete from ifs_level0_header where id=?",(level0_id_id,))    
     db.execute("insert into ifs_level0_header \
-        (id, obs_time, exp_time, ra, `dec`, create_time) \
-        values (?,?,?,?,?,?)",
-        (level0_id_id, exp_start_time, exp_time, ra_obj, dec_obj, create_time))
+        (id, ra, `dec`, object_name, version) \
+        values (?,?,?,?,?)",
+        (level0_id_id, ra_obj, dec_obj, object_name, version))
     
     if copyfiles:
         #copy files

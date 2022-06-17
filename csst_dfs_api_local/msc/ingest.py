@@ -6,6 +6,8 @@ import datetime
 import shutil
 
 from csst_dfs_api_local.common.db import DBClient
+from csst_dfs_commons.utils.fits import get_header_value
+
 log = logging.getLogger('csst-dfs-api-local')
 
 def ingest():

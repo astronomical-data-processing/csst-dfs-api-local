@@ -31,6 +31,12 @@ drop table if exists msc_level1_header;
 drop table if exists msc_level1_prc;
 
 drop table if exists msc_level1_ref;
+
+drop table if exists msc_level2_data;
+
+drop table if exists msc_level2_header;
+
+drop table if exists msc_level2_catalog;
 /*----------------ifs------------------------------*/
 
 drop table if exists ifs_level0_data;
@@ -293,6 +299,26 @@ create table msc_level1_prc
    prc_time             datetime,
    result_file_path            varchar(256)
 );
+
+create table msc_level2_data (
+   id integer PRIMARY KEY autoincrement,
+   level1_id            int(20)          not null,
+   data_type            VARCHAR(64)          not null,
+   filename             VARCHAR(128)         null,
+   file_path            VARCHAR(256)         null,
+   prc_status           tinyint(1),
+   prc_time             datetime                 null,
+   qc2_status           tinyint(1),
+   qc2_time             datetime                 null,
+   create_time          datetime                 null
+);
+
+create table msc_level2_header (
+   id                   BIGINT                 not null,
+   ra                   float8               null,
+   "dec"                float8               null,
+   constraint PK_MSC_LEVEL2_HEADER primary key (id)
+);
 /*===========================ifs===================================*/
 create table ifs_level0_data
 (
@@ -300,7 +326,6 @@ create table ifs_level0_data
    level0_id            varchar(20) not null,
    obs_id               varchar(10) not null,
    detector_no          varchar(10) not null,
-   object_name          varchar(64) not null,
    obs_type             varchar(16),
    obs_time             datetime,
    exp_time             float,
@@ -317,11 +342,10 @@ create table ifs_level0_data
 create table ifs_level0_header
 (
    id                   int(20) not null,
-   obs_time             datetime,
-   exp_time             float,
    ra                   float,
    "dec"                float,
-   create_time          datetime,
+   object_name          varchar(64) not null,
+   version              varchar(64) not null,
    primary key (id)
 );
 
@@ -439,11 +463,10 @@ create table mci_level0_data
 create table mci_level0_header
 (
    id                   int(20) not null,
-   obs_time             datetime,
-   exp_time             float,
    ra                   float,
    "dec"                float,
-   create_time          datetime,
+   object_name          varchar(64) not null,
+   version              varchar(64) not null,
    primary key (id)
 );
 
@@ -468,8 +491,6 @@ create table mci_cal2level0
 create table mci_cal_header
 (
    id                   int(20) not null,
-   obs_time             datetime,
-   exp_time             float,
    ra                   float,
    "dec"                float,
    create_time          datetime,
@@ -686,12 +707,9 @@ create table sls_level2_spectra_header
    create_time          datetime,
    primary key (id)
 );
--- csst.msc_level2_catalog definition
 
-CREATE TABLE msc_level2_catalog (
-  source_id integer PRIMARY KEY autoincrement,
-  obs_id varchar(12),
-  detector_no char(2),
+/*------------------------------------------------*/
+CREATE TABLE msc_level2_catalog (  
   seq int(20),
   flux_aper_1 double,
   flux_aper_2 double,
@@ -890,5 +908,10 @@ CREATE TABLE msc_level2_catalog (
   disk_theta_world double,
   disk_thetaerr_world double,
   disk_theta_j2000 double,
-  obs_time datetime
+  level2_id integer,
+  NS8HIdx integer,
+  NS16HIdx integer,
+  NS32HIdx integer,
+  NS64HIdx integer,
+  create_time datetime
 ) ;

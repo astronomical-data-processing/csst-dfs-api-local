@@ -6,6 +6,8 @@ import datetime
 import shutil
 
 from csst_dfs_api_local.common.db import DBClient
+from csst_dfs_commons.utils.fits import get_header_value
+
 log = logging.getLogger('csst-dfs-api-local')
 
 def ingest():
@@ -51,6 +53,8 @@ def ingest_one(file_path, db, copyfiles):
     
     module_id = header["INSTRUME"]
     obs_type = header["OBSTYPE"]
+    object_name = header["OBJECT"]
+
     qc0_status = -1
     prc_status = -1
     time_now = datetime.datetime.now()
@@ -67,9 +71,9 @@ def ingest_one(file_path, db, copyfiles):
         (obs_id,exp_start_time,exp_time,module_id,obs_type,facility_status_id,module_status_id,qc0_status, prc_status,create_time))
         db.end()
     #level0
-    detector = header1["DETNAM"]
+    detector = get_header_value("DETNAM", header1, "-")
     filename = header["FILENAME"]
-    
+    version = get_header_value("IMG_VER", header, "-")
     existed = db.exists(
             "select * from mci_level0_data where filename=?",
             (filename,)
@@ -102,9 +106,9 @@ def ingest_one(file_path, db, copyfiles):
     dec_obj = header["OBJ_DEC"]
     db.execute("delete from mci_level0_header where id=?",(level0_id_id,))    
     db.execute("insert into mci_level0_header \
-        (id, obs_time, exp_time, ra, `dec`, create_time) \
-        values (?,?,?,?,?,?)",
-        (level0_id_id, exp_start_time, exp_time, ra_obj, dec_obj, create_time))
+        (id, ra, `dec`, object_name, version) \
+        values (?,?,?,?,?)",
+        (level0_id_id, ra_obj, dec_obj, object_name, version))
     
     if copyfiles:
         #copy files
