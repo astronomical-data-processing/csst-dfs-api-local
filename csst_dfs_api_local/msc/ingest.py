@@ -65,7 +65,7 @@ def ingest_one(file_path, db, copyfiles):
         db.end()
     #level0
     detector = header["DETECTOR"]
-    filename = header["FILENAME"]
+    filename = get_header_value("FILENAME", header, os.path.basename(file_path))
     
     existed = db.exists(
             "select * from t_level0_data where filename=?",

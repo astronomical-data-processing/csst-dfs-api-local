@@ -7,6 +7,7 @@ import shutil
 
 from csst_dfs_api_local.common.db import DBClient
 from csst_dfs_commons.utils.fits import get_header_value
+from csst_dfs_commons.models.ifs import Level0Record
 
 log = logging.getLogger('csst-dfs-api-local')
 
@@ -53,7 +54,8 @@ def ingest_one(file_path, db, copyfiles):
     
     module_id = header["INSTRUME"]
     obs_type = header["OBSTYPE"]
-    object_name = header["OBJECT"]
+    object_name = get_header_value("OBJECT", header, "-")
+    
     qc0_status = -1
     prc_status = -1
     time_now = datetime.datetime.now()
@@ -71,8 +73,8 @@ def ingest_one(file_path, db, copyfiles):
         db.end()
     #level0
     detector = get_header_value("DETNAM", header1, "-")
-    filename = header["FILENAME"]
-    version = get_header_value("IMG_VER", header, "-")
+    filename = get_header_value("FILENAME", header, os.path.basename(file_path))
+    version = get_header_value("IMG_VER", header1, "-")
     
     existed = db.exists(
             "select * from ifs_level0_data where filename=?",
@@ -116,7 +118,21 @@ def ingest_one(file_path, db, copyfiles):
 
     db.end()
 
+    rec = Level0Record(
+        id = level0_id_id,
+        level0_id = level0_id,
+        obs_id = obs_id,
+        detector_no = detector,
+        obs_type = obs_type,
+        obs_time = exp_start_time,
+        exp_time = exp_time,
+        detector_status_id = detector_status_id,
+        filename = filename,
+        file_path = file_full_path
+    )
+
     print(f"{file_path} imported")
+    return rec
 
 if __name__ == "__main__":
     ingest()

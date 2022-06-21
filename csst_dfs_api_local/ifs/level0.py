@@ -8,6 +8,7 @@ from ..common.utils import *
 from csst_dfs_commons.models import Result
 from csst_dfs_commons.models.ifs import Level0Record
 from csst_dfs_commons.models.common import from_dict_list
+from .ingest import ingest_one
 
 log = logging.getLogger('csst')
 
@@ -201,46 +202,16 @@ class Level0DataApi(object):
         ''' insert a level0 data record into database
  
         parameter kwargs:
-            obs_id = [str]
-            detector_no = [str]
-            obs_type = [str]        
-            obs_time = [str]
-            exp_time = [int]
-            detector_status_id = [int]
-            filename = [str]
-            file_path = [str]
+            file_path = [str],
+            copyfiles = [boolean]
         return: csst_dfs_common.models.Result
         '''          
-        rec = Level0Record(
-            obs_id = get_parameter(kwargs, "obs_id"),
-            detector_no = get_parameter(kwargs, "detector_no"),
-            obs_type = get_parameter(kwargs, "obs_type"),
-            obs_time = get_parameter(kwargs, "obs_time"),
-            exp_time = get_parameter(kwargs, "exp_time"),
-            detector_status_id = get_parameter(kwargs, "detector_status_id"),
-            filename = get_parameter(kwargs, "filename"),
-            file_path = get_parameter(kwargs, "file_path")
-        )
-        rec.level0_id = f"{rec.obs_id}{rec.detector_no}"
+
+        file_path = get_parameter(kwargs, "file_path")
+        copyfiles = get_parameter(kwargs, "copyfiles", False)
         try:
-            existed = self.db.exists(
-                    "select * from ifs_level0_data where filename=?",
-                    (rec.filename,)
-                )
-            if existed:
-                log.warning('%s existed' %(rec.filename, ))
-                return Result.error(message ='%s existed' %(rec.filename, ))
-
-            self.db.execute(
-                'INSERT INTO ifs_level0_data (level0_id, obs_id, detector_no, obs_type, obs_time, exp_time,detector_status_id, filename, file_path,qc0_status, prc_status,create_time) \
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (rec.level0_id, rec.obs_id, rec.detector_no, rec.obs_type, rec.obs_time, rec.exp_time, rec.detector_status_id, rec.filename, rec.file_path,-1,-1,format_time_ms(time.time()))
-            )
-            self.db.end()
-            rec.id = self.db.last_row_id()
-
+            rec = ingest_one(file_path, self.db, copyfiles)
             return Result.ok_data(data=rec)
-
         except Exception as e:
             log.error(e)
             return Result.error(message=str(e)) 
